@@ -3,7 +3,6 @@ import '../styles/index.css';
 import Icons from '../components/Icons.astro';
 import Header from '../components/Header.astro';
 import TabModels from '../components/TabModels.astro';
-import ModelDrawer from '../components/ModelDrawer.astro';
 import MobileNav from '../components/MobileNav.astro';
 import Toast from '../components/Toast.astro';
 ---
@@ -54,15 +53,10 @@ import Toast from '../components/Toast.astro';
     <!-- OpenRouter Top Navbar -->
     <Header />
 
-    <!-- Main Content Container with VS Code Style Integrated Side Panel -->
-    <div class="mx-auto max-w-[1600px] w-full px-4 sm:px-6 pb-24 pt-1 grow flex items-start gap-4 transition-all">
-      <main class="flex-1 min-w-0 transition-all duration-200">
-        <TabModels />
-      </main>
-
-      <!-- VS Code Style In-Place Side Panel (Desktop) & Mobile Sheet (Mobile) -->
-      <ModelDrawer />
-    </div>
+    <!-- Main Content Container with Symmetrical Gutters -->
+    <main class="mx-auto max-w-[1600px] w-full px-4 sm:px-6 pb-24 pt-1 grow">
+      <TabModels />
+    </main>
 
     <!-- Mobile Bottom Floating Navigation -->
     <MobileNav />

@@ -4,7 +4,7 @@
 <aside
   x-show="inspectedModel !== null"
   x-cloak
-  class="hidden lg:flex w-[400px] xl:w-[440px] shrink-0 sticky top-[68px] h-[calc(100vh-84px)] rounded-[12px] border border-[var(--glass-brd)] bg-[var(--panel)] shadow-sm flex-col overflow-hidden transition-all duration-200"
+  class="hidden lg:flex w-[390px] xl:w-[430px] shrink-0 sticky top-[68px] h-[calc(100vh-84px)] rounded-[12px] border border-[var(--glass-brd)] bg-[var(--panel)] shadow-xs flex-col overflow-hidden transition-all duration-200"
   x-transition:enter="transition ease-out duration-200"
   x-transition:enter-start="opacity-0 translate-x-6 scale-[0.98]"
   x-transition:enter-end="opacity-100 translate-x-0 scale-100"
@@ -13,18 +13,18 @@
   x-transition:leave-end="opacity-0 translate-x-6 scale-[0.98]"
   aria-label="Model Inspector Panel"
 >
-  <!-- Desktop Panel Header -->
+  <!-- Desktop Panel Header (Matched with Table Header Row Height) -->
   <template x-if="inspectedModel">
-    <div class="p-4 border-b border-[var(--hair)] flex items-start justify-between gap-3 bg-[var(--panel)] shrink-0">
-      <div class="flex items-center gap-3 min-w-0">
+    <div class="h-[52px] px-4 border-b border-[var(--hair)] flex items-center justify-between gap-3 bg-[var(--panel-muted)]/95 backdrop-blur-md shrink-0">
+      <div class="flex items-center gap-2.5 min-w-0">
         <div
-          class="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
+          class="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
           :style="`color: ${providerColor(inspectedModel.provider)}`"
-          x-html="providerSvg(inspectedModel.provider, 18)"
+          x-html="providerSvg(inspectedModel.provider, 15)"
         ></div>
         <div class="min-w-0">
-          <h3 class="text-sm font-bold text-[var(--strong)] truncate" x-text="inspectedModel.name"></h3>
-          <p class="text-xs font-mono text-[var(--soft)]" x-text="inspectedModel.provider"></p>
+          <h3 class="text-[13px] font-bold text-[var(--strong)] truncate tracking-tight" x-text="inspectedModel.name"></h3>
+          <p class="text-[11px] font-mono text-[var(--soft)] leading-none" x-text="inspectedModel.provider"></p>
         </div>
       </div>
 
@@ -34,7 +34,7 @@
         aria-label="Close panel"
         title="Close (Esc)"
       >
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
         </svg>
       </button>
@@ -43,12 +43,12 @@
 
   <!-- Desktop Panel Body (Scrollable) -->
   <template x-if="inspectedModel">
-    <div class="flex-1 overflow-y-auto p-4 space-y-4 scroll-slim">
+    <div class="flex-1 overflow-y-auto p-4 space-y-3.5 scroll-slim">
       
       <!-- Key Gauges Grid -->
       <div class="grid grid-cols-2 gap-2.5">
         <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
-          <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-1">Intelligence</span>
+          <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5">Intelligence</span>
           <div class="flex items-baseline gap-1.5">
             <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="inspectedModel.intelligence ?? '--'"></span>
             <span class="text-xs font-mono text-[var(--muted)]">IQ</span>
@@ -56,7 +56,7 @@
         </div>
 
         <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
-          <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-1" x-text="`Cost (${costBasis})`"></span>
+          <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5" x-text="`Cost (${costBasis})`"></span>
           <div class="flex items-baseline gap-1.5">
             <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? (getModelCost(inspectedModel) === 0 ? 'Free' : fmtCost(getModelCost(inspectedModel))) : '--'"></span>
             <span class="text-xs font-mono text-[var(--muted)]" x-show="getModelCost(inspectedModel) !== null && getModelCost(inspectedModel) > 0">/ 1M</span>
@@ -65,13 +65,13 @@
       </div>
 
       <!-- Speed & Latency Telemetry -->
-      <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2.5 shadow-2xs">
+      <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
         <div class="flex items-center justify-between border-b border-[var(--hair)] pb-1.5">
           <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5">
             ⚡ Speed & Latency
           </span>
           <template x-if="inspectedModel.isOpenWeights">
-            <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open Weights</span>
+            <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open</span>
           </template>
         </div>
 
@@ -96,7 +96,7 @@
       </div>
 
       <!-- Benchmark Sub-Scores -->
-      <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
+      <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
         <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
           📊 Benchmark Sub-Indices
         </span>
@@ -117,7 +117,7 @@
       </div>
 
       <!-- Token Economics Card -->
-      <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
+      <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
         <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
           💰 Token Pricing Breakdown
         </span>
@@ -161,7 +161,7 @@
       </div>
 
       <!-- Workload Cost Simulator -->
-      <div class="p-3.5 rounded-[12px] bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-3 shadow-2xs">
+      <div class="p-3.5 rounded-[12px] bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2.5 shadow-2xs">
         <div class="flex items-center justify-between">
           <span class="text-xs font-semibold tracking-tight text-[var(--strong)]">Workload Cost Simulator</span>
           <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black" x-text="estimatedRunCost"></span>
@@ -196,7 +196,7 @@
         </div>
 
         <!-- Sliders -->
-        <div class="space-y-2.5 pt-0.5">
+        <div class="space-y-2 pt-0.5">
           <div>
             <div class="flex justify-between text-[11px] mb-1">
               <span class="text-[var(--muted)]">Input tokens</span>
@@ -296,16 +296,16 @@
       
       <!-- Mobile Drawer Header -->
       <template x-if="inspectedModel">
-        <div class="p-4 border-b border-[var(--hair)] flex items-start justify-between gap-4 bg-[var(--panel)] shrink-0">
-          <div class="flex items-center gap-3 min-w-0">
+        <div class="h-[52px] px-4 border-b border-[var(--hair)] flex items-center justify-between gap-4 bg-[var(--panel-muted)]/95 backdrop-blur-md shrink-0">
+          <div class="flex items-center gap-2.5 min-w-0">
             <div
-              class="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
+              class="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
               :style="`color: ${providerColor(inspectedModel.provider)}`"
-              x-html="providerSvg(inspectedModel.provider, 18)"
+              x-html="providerSvg(inspectedModel.provider, 15)"
             ></div>
             <div class="min-w-0">
-              <h3 id="mobile-drawer-model-title" class="text-sm font-bold text-[var(--strong)] truncate" x-text="inspectedModel.name"></h3>
-              <p class="text-xs font-mono text-[var(--soft)]" x-text="inspectedModel.provider"></p>
+              <h3 id="mobile-drawer-model-title" class="text-[13px] font-bold text-[var(--strong)] truncate tracking-tight" x-text="inspectedModel.name"></h3>
+              <p class="text-[11px] font-mono text-[var(--soft)] leading-none" x-text="inspectedModel.provider"></p>
             </div>
           </div>
 
@@ -315,7 +315,7 @@
             aria-label="Close drawer"
             title="Close (Esc)"
           >
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -324,12 +324,12 @@
 
       <!-- Mobile Drawer Scrollable Content -->
       <template x-if="inspectedModel">
-        <div class="flex-1 overflow-y-auto p-4 space-y-4 scroll-slim">
+        <div class="flex-1 overflow-y-auto p-4 space-y-3.5 scroll-slim">
           
           <!-- Key Metrics Grid -->
           <div class="grid grid-cols-2 gap-2.5">
             <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
-              <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-1">Intelligence</span>
+              <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5">Intelligence</span>
               <div class="flex items-baseline gap-1.5">
                 <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="inspectedModel.intelligence ?? '--'"></span>
                 <span class="text-xs font-mono text-[var(--muted)]">IQ</span>
@@ -337,7 +337,7 @@
             </div>
 
             <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
-              <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-1" x-text="`Cost (${costBasis})`"></span>
+              <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5" x-text="`Cost (${costBasis})`"></span>
               <div class="flex items-baseline gap-1.5">
                 <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? (getModelCost(inspectedModel) === 0 ? 'Free' : fmtCost(getModelCost(inspectedModel))) : '--'"></span>
                 <span class="text-xs font-mono text-[var(--muted)]" x-show="getModelCost(inspectedModel) !== null && getModelCost(inspectedModel) > 0">/ 1M</span>
@@ -346,13 +346,13 @@
           </div>
 
           <!-- Speed & Latency Telemetry -->
-          <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2.5 shadow-2xs">
+          <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
             <div class="flex items-center justify-between border-b border-[var(--hair)] pb-1.5">
               <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5">
                 ⚡ Speed & Latency
               </span>
               <template x-if="inspectedModel.isOpenWeights">
-                <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open Weights</span>
+                <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open</span>
               </template>
             </div>
 
@@ -377,7 +377,7 @@
           </div>
 
           <!-- Benchmark Breakdown Sub-Scores -->
-          <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
+          <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
             <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
               📊 Benchmark Sub-Indices
             </span>
@@ -398,7 +398,7 @@
           </div>
 
           <!-- Token Economics Card -->
-          <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
+          <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
             <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
               💰 Token Pricing Breakdown
             </span>
@@ -442,7 +442,7 @@
           </div>
 
           <!-- Workload Cost Simulator -->
-          <div class="p-3.5 rounded-[12px] bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-3 shadow-2xs">
+          <div class="p-3.5 rounded-[12px] bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2.5 shadow-2xs">
             <div class="flex items-center justify-between">
               <span class="text-xs font-semibold tracking-tight text-[var(--strong)]">Workload Cost Simulator</span>
               <span class="text-xs font-mono font-bold px-2 py-0.5 rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black" x-text="estimatedRunCost"></span>
@@ -477,7 +477,7 @@
             </div>
 
             <!-- Sliders -->
-            <div class="space-y-2.5 pt-0.5">
+            <div class="space-y-2 pt-0.5">
               <div>
                 <div class="flex justify-between text-[11px] mb-1">
                   <span class="text-[var(--muted)]">Input tokens</span>
