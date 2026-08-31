@@ -1,0 +1,7 @@
+<!-- TOAST (OPENROUTER STYLE) -->
+<div x-show="toastMsg" x-transition
+  class="fixed bottom-16 sm:bottom-6 left-1/2 -translate-x-1/2 z-[60] flex items-center gap-2.5 rounded-xl px-4 py-2.5 bg-[var(--panel)] border border-[var(--glass-brd)] shadow-2xl text-xs font-mono mb-[env(safe-area-inset-bottom)]"
+  role="status" aria-live="polite">
+  <span class="shrink-0 w-2 h-2 rounded-full bg-[#c6ff00] shadow-[0_0_8px_#c6ff00]"></span>
+  <span class="text-[var(--strong)] font-medium" x-text="toastMsg"></span>
+</div>

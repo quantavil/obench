@@ -1,0 +1,85 @@
+---
+import '../styles/index.css';
+import Icons from '../components/Icons.astro';
+import Header from '../components/Header.astro';
+import TabModels from '../components/TabModels.astro';
+import ModelDrawer from '../components/ModelDrawer.astro';
+import MobileNav from '../components/MobileNav.astro';
+import Toast from '../components/Toast.astro';
+---
+
+<!DOCTYPE html>
+<html lang="en" class="h-full dark">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="color-scheme" content="dark light">
+  <meta name="theme-color" content="#07090e">
+  <title>OBench · Real-Time AI Model Benchmarks & Token Pricing</title>
+
+  <!-- Apply saved theme before first paint. Dark is default. -->
+  <script is:inline>
+    const savedTheme = localStorage.getItem('bench-theme');
+    if (savedTheme === 'light') {
+      document.documentElement.classList.remove('dark');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f6f8fa');
+    } else {
+      document.documentElement.classList.add('dark');
+    }
+  </script>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+</head>
+
+<body class="h-full font-sans antialiased text-[var(--strong)] bg-[var(--bg)] selection:bg-[#c6ff00] selection:text-black">
+
+  <Icons />
+
+  <div class="dark-mesh" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+
+  <noscript>
+    <div style="max-width:32rem;margin:4rem auto;padding:0 1.5rem;font-family:sans-serif">
+      <h1 style="font-size:2rem;font-weight:800">OpenBench</h1>
+      <p style="margin-top:.5rem;color:var(--soft)">This benchmarking explorer requires JavaScript to run.</p>
+    </div>
+  </noscript>
+
+  <div x-data="bench" x-cloak class="min-h-full flex flex-col">
+    <!-- OpenRouter Top Navbar -->
+    <Header />
+
+    <!-- Main Content Container -->
+    <main class="mx-auto max-w-7xl w-full px-4 sm:px-6 pb-24 pt-1 grow">
+      <TabModels />
+    </main>
+
+    <!-- Slide-Over Model Inspector Drawer -->
+    <ModelDrawer />
+
+    <!-- Mobile Bottom Floating Navigation -->
+    <MobileNav />
+
+    <!-- Toast Notification -->
+    <Toast />
+  </div>
+
+  <script>
+    import { bench } from '../store/appStore';
+    
+    document.addEventListener('alpine:init', () => {
+      (window as any).Alpine.data('bench', bench);
+    });
+  </script>
+  <script is:inline>
+    window.__benchBooted = true;
+  </script>
+</body>
+
+</html>

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://unpkg.com/knip@5/overview/configuration-schema.json",
+  "entry": [
+    "src/pages/**/*.{astro,ts}",
+    "functions/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "project": [
+    "src/**/*.{astro,ts}",
+    "functions/**/*.ts",
+    "tests/**/*.ts"
+  ],
+  "ignoreDependencies": [
+    "tailwindcss"
+  ],
+  "ignoreExportsUsedInFile": true
+}

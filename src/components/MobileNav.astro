@@ -1,0 +1,49 @@
+<!-- MOBILE BOTTOM NAVIGATION (OPENROUTER PRO ERGONOMICS) -->
+<div class="sm:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] max-w-md">
+  <div class="glass rounded-xl p-1.5 flex items-center justify-between shadow-2xl border border-[var(--glass-brd)] bg-[var(--glass-bg-hi)] backdrop-blur-lg mb-[env(safe-area-inset-bottom)]">
+    
+    <!-- Table View -->
+    <button @click="modelsViewMode = 'table'"
+      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'table' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <use href="#icon-list" />
+      </svg>
+      <span>Table</span>
+    </button>
+
+    <!-- Cards View -->
+    <button @click="modelsViewMode = 'cards'"
+      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'cards' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <use href="#icon-grid" />
+      </svg>
+      <span>Cards</span>
+    </button>
+
+    <!-- Plot View -->
+    <button @click="modelsViewMode = 'plot'"
+      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'plot' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <use href="#icon-plot" />
+      </svg>
+      <span>Plot</span>
+    </button>
+
+    <!-- Compare View -->
+    <button @click="modelsViewMode = 'compare'"
+      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'compare' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <use href="#icon-compare" />
+      </svg>
+      <span>VS</span>
+      <template x-if="comparedModelIds.length > 0">
+        <span class="px-1 rounded bg-black/20 font-mono text-[9px]" x-text="comparedModelIds.length"></span>
+      </template>
+    </button>
+
+  </div>
+</div>

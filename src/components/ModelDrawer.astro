@@ -1,0 +1,280 @@
+<!-- SLIDE-OVER MODEL INSPECTOR SHEET (OPENROUTER ERGONOMICS & FULL TELEMETRY) -->
+<div
+  x-show="inspectedModel !== null"
+  x-cloak
+  class="fixed inset-0 z-50 overflow-hidden"
+  role="dialog"
+  aria-modal="true"
+>
+  <!-- Full-Screen Blurred Backdrop -->
+  <div
+    x-show="inspectedModel !== null"
+    x-transition:enter="transition-opacity ease-out duration-200"
+    x-transition:enter-start="opacity-0"
+    x-transition:enter-end="opacity-100"
+    x-transition:leave="transition-opacity ease-in duration-150"
+    x-transition:leave-start="opacity-100"
+    x-transition:leave-end="opacity-0"
+    @click="closeModelDrawer()"
+    class="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+  ></div>
+
+  <!-- Slide-Over Drawer Container -->
+  <div class="fixed inset-y-0 right-0 max-w-full flex pl-10 pointer-events-none">
+    <div
+      x-show="inspectedModel !== null"
+      x-transition:enter="transform transition ease-out duration-300"
+      x-transition:enter-start="translate-x-full"
+      x-transition:enter-end="translate-x-0"
+      x-transition:leave="transform transition ease-in duration-200"
+      x-transition:leave-start="translate-x-0"
+      x-transition:leave-end="translate-x-full"
+      class="w-screen max-w-md bg-[var(--panel)] border-l border-[var(--glass-brd)] shadow-2xl flex flex-col pointer-events-auto"
+    >
+      
+      <!-- Drawer Header -->
+      <template x-if="inspectedModel">
+        <div class="p-5 border-b border-[var(--hair)] flex items-start justify-between gap-4 bg-[var(--panel-header)]">
+          <div class="flex items-center gap-3 min-w-0">
+            <!-- Brand SVG Icon -->
+            <div
+              class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-xs"
+              :style="`color: ${providerColor(inspectedModel.provider)}`"
+              x-html="providerSvg(inspectedModel.provider, 20)"
+            ></div>
+            <div class="min-w-0">
+              <h3 class="text-base font-extrabold text-[var(--strong)] truncate" x-text="inspectedModel.name"></h3>
+              <p class="text-xs font-mono text-[var(--soft)]" x-text="inspectedModel.provider"></p>
+            </div>
+          </div>
+
+          <button
+            @click="closeModelDrawer()"
+            class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--soft)] hover:text-[var(--strong)] hover:bg-[var(--chip-bg)] transition-colors cursor-pointer"
+            aria-label="Close drawer"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+      </template>
+
+      <!-- Drawer Scrollable Content -->
+      <template x-if="inspectedModel">
+        <div class="flex-1 overflow-y-auto p-5 space-y-6 scroll-slim">
+          
+          <!-- Key Metrics Grid -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)]">
+              <span class="text-[10px] font-mono text-[var(--soft)] uppercase tracking-wider block mb-1">Quality Index</span>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-black font-mono text-emerald-700 dark:text-[#c6ff00]" x-text="inspectedModel.intelligence ?? '--'"></span>
+                <span class="text-xs font-mono text-[var(--soft)]">IQ</span>
+              </div>
+            </div>
+
+            <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)]">
+              <span class="text-[10px] font-mono text-[var(--soft)] uppercase tracking-wider block mb-1" x-text="`Blended (${costBasis})`"></span>
+              <div class="flex items-baseline gap-1.5">
+                <span class="text-2xl font-black font-mono text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? fmtCost(getModelCost(inspectedModel)) : '--'"></span>
+                <span class="text-xs font-mono text-[var(--soft)]">/ 1M</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Speed & Latency Telemetry -->
+          <div class="p-4 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-3">
+            <div class="flex items-center justify-between border-b border-[var(--hair)] pb-2">
+              <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5">
+                ⚡ Performance & Speed Telemetry
+              </span>
+              <template x-if="inspectedModel.isOpenWeights">
+                <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open Weights</span>
+              </template>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3 text-xs font-mono">
+              <div class="p-2.5 rounded-lg bg-[var(--chip-bg)]">
+                <span class="text-[10px] text-[var(--soft)] block">Output Throughput</span>
+                <span class="text-base font-extrabold text-[var(--strong)]" x-text="inspectedModel.speedTps ? `${inspectedModel.speedTps} tok/s` : '--'"></span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-[var(--chip-bg)]">
+                <span class="text-[10px] text-[var(--soft)] block">Time to First Token</span>
+                <span class="text-base font-extrabold text-[var(--strong)]" x-text="inspectedModel.latencyTtft ? `${inspectedModel.latencyTtft}s` : '--'"></span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-[var(--chip-bg)]">
+                <span class="text-[10px] text-[var(--soft)] block">Max Context Window</span>
+                <span class="text-sm font-extrabold text-[var(--strong)]" x-text="inspectedModel.contextWindow ? `${Math.round(inspectedModel.contextWindow/1000)}k tokens` : '128k'"></span>
+              </div>
+              <div class="p-2.5 rounded-lg bg-[var(--chip-bg)]">
+                <span class="text-[10px] text-[var(--soft)] block">Max Output Tokens</span>
+                <span class="text-sm font-extrabold text-[var(--strong)]" x-text="inspectedModel.maxOutputTokens ? `${Math.round(inspectedModel.maxOutputTokens/1000)}k tokens` : '4k'"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Benchmark Breakdown Sub-Scores -->
+          <div class="p-4 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2.5">
+            <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
+              📊 Benchmark Sub-Indices
+            </span>
+            <div class="space-y-2 text-xs font-mono">
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--soft)]">Coding Index (SWE-bench)</span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.codingIndex ?? '--'"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--soft)]">Math Index (GSM8k / MATH)</span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.mathIndex ?? '--'"></span>
+              </div>
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--soft)]">Reasoning Index (GPQA)</span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.reasoningIndex ?? '--'"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Token Economics Card -->
+          <div class="p-4 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2.5">
+            <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
+              💰 Token Pricing Breakdown
+            </span>
+            
+            <div class="space-y-2 text-xs font-mono">
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--soft)] flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-rose-500"></span> Prompt Input
+                </span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mInput !== null ? `$${inspectedModel.price1mInput} / 1M` : 'Free / Open Weight'"></span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--soft)] flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Completion Output
+                </span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mOutput !== null ? `$${inspectedModel.price1mOutput} / 1M` : 'Free / Open Weight'"></span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--soft)] flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Cached Prompt Read
+                </span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="inspectedModel.price1mCacheRead !== null ? `$${inspectedModel.price1mCacheRead} / 1M` : '--'"></span>
+              </div>
+
+              <div class="flex items-center justify-between">
+                <span class="text-[var(--soft)] flex items-center gap-1.5">
+                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Batch API Rate
+                </span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mBatch !== null ? `$${inspectedModel.price1mBatch} / 1M` : '--'"></span>
+              </div>
+
+              <template x-if="inspectedModel.releasedAt">
+                <div class="flex items-center justify-between pt-2 border-t border-[var(--hair)]">
+                  <span class="text-[var(--soft)]">Release Date</span>
+                  <span class="font-medium text-[var(--strong)]" x-text="inspectedModel.releasedAt"></span>
+                </div>
+              </template>
+            </div>
+          </div>
+
+          <!-- Workload Cost Simulator with 1-Click Presets -->
+          <div class="p-4 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-4">
+            <div class="flex items-center justify-between">
+              <span class="text-xs font-mono font-bold text-[var(--strong)]">Workload Cost Simulator</span>
+              <span class="text-xs font-mono font-black text-emerald-700 dark:text-[#c6ff00]" x-text="`Per Call: ${estimatedRunCost}`"></span>
+            </div>
+
+            <!-- 1-Click Workload Presets -->
+            <div class="grid grid-cols-4 gap-1.5 text-xs font-mono">
+              <button @click="applyWorkloadPreset('chat')" class="px-2 py-1.5 rounded-lg bg-[var(--chip-bg)] hover:bg-[var(--chip-hover)] text-[var(--strong)] font-semibold cursor-pointer text-center" title="1.5k in / 500 out">
+                💬 Chat
+              </button>
+              <button @click="applyWorkloadPreset('agent')" class="px-2 py-1.5 rounded-lg bg-[var(--chip-bg)] hover:bg-[var(--chip-hover)] text-[var(--strong)] font-semibold cursor-pointer text-center" title="15k in / 2.5k out">
+                🤖 Agent
+              </button>
+              <button @click="applyWorkloadPreset('rag')" class="px-2 py-1.5 rounded-lg bg-[var(--chip-bg)] hover:bg-[var(--chip-hover)] text-[var(--strong)] font-semibold cursor-pointer text-center" title="64k in / 3.5k out">
+                📚 RAG
+              </button>
+              <button @click="applyWorkloadPreset('batch')" class="px-2 py-1.5 rounded-lg bg-[var(--chip-bg)] hover:bg-[var(--chip-hover)] text-[var(--strong)] font-semibold cursor-pointer text-center" title="100k in / 10k out">
+                ⚡ Batch
+              </button>
+            </div>
+
+            <!-- Optimization Toggles -->
+            <div class="flex items-center justify-between text-xs font-mono pt-1">
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" x-model="usePromptCaching" class="rounded accent-emerald-600 dark:accent-lime-500 w-3.5 h-3.5" />
+                <span class="text-[var(--soft)]">Prompt Caching</span>
+              </label>
+              <label class="flex items-center gap-1.5 cursor-pointer">
+                <input type="checkbox" x-model="useBatchPricing" class="rounded accent-emerald-600 dark:accent-lime-500 w-3.5 h-3.5" />
+                <span class="text-[var(--soft)]">Batch (50% Off)</span>
+              </label>
+            </div>
+
+            <!-- Input / Output Sliders -->
+            <div class="space-y-3 pt-1">
+              <div>
+                <div class="flex justify-between text-xs font-mono mb-1">
+                  <span class="text-[var(--soft)]">Prompt Tokens</span>
+                  <span class="font-bold text-[var(--strong)]" x-text="`${calcInputTokens.toLocaleString()} tokens`"></span>
+                </div>
+                <input type="range" min="100" max="100000" step="500" x-model="calcInputTokens" class="w-full accent-emerald-600 dark:accent-lime-500 cursor-pointer" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-mono mb-1">
+                  <span class="text-[var(--soft)]">Completion Tokens</span>
+                  <span class="font-bold text-[var(--strong)]" x-text="`${calcOutputTokens.toLocaleString()} tokens`"></span>
+                </div>
+                <input type="range" min="50" max="16000" step="100" x-model="calcOutputTokens" class="w-full accent-emerald-600 dark:accent-lime-500 cursor-pointer" />
+              </div>
+
+              <div>
+                <div class="flex justify-between text-xs font-mono mb-1">
+                  <span class="text-[var(--soft)]">Daily Request Volume</span>
+                  <span class="font-bold text-[var(--strong)]" x-text="`${Number(dailyRequests).toLocaleString()} reqs / day`"></span>
+                </div>
+                <input type="range" min="100" max="50000" step="500" x-model="dailyRequests" class="w-full accent-emerald-600 dark:accent-lime-500 cursor-pointer" />
+              </div>
+            </div>
+
+            <!-- Projected Monthly Total -->
+            <div class="p-3 rounded-lg bg-[var(--panel-muted)] flex items-center justify-between text-xs font-mono">
+              <span class="text-[var(--soft)]">Est. Monthly Cost:</span>
+              <span class="font-black text-sm text-emerald-700 dark:text-[#c6ff00]" x-text="estimatedMonthlyCost"></span>
+            </div>
+          </div>
+
+          <!-- Model Identifier & 1-Click Copy -->
+          <div class="space-y-1.5">
+            <label class="text-[10px] font-mono text-[var(--soft)] uppercase tracking-wider block">Model Identifier</label>
+            <div class="flex items-center gap-2">
+              <input
+                type="text"
+                readonly
+                :value="inspectedModel.id"
+                class="flex-1 h-9 px-3 text-xs font-mono rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] select-all"
+              />
+              <button
+                @click="copyToClipboard(inspectedModel.id, inspectedModel.id)"
+                class="btn btn-secondary h-9 px-3 text-xs font-mono font-bold flex items-center gap-1.5 cursor-pointer shrink-0"
+              >
+                <template x-if="copiedModelId === inspectedModel.id">
+                  <span class="text-emerald-500">Copied!</span>
+                </template>
+                <template x-if="copiedModelId !== inspectedModel.id">
+                  <span>Copy ID</span>
+                </template>
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </template>
+
+    </div>
+  </div>
+</div>
