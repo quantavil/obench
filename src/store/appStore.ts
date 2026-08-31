@@ -187,6 +187,14 @@ export function bench() {
         });
       });
 
+      this.$watch('inspectedModel', () => {
+        this.$nextTick(() => {
+          if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
+            this.mountCurrentChart();
+          }
+        });
+      });
+
       // Initial compute & mount
       this.updateModelRows();
       this.$nextTick(() => {
@@ -573,7 +581,7 @@ export function bench() {
     // ---------------------------------------------------- actions
     openModelDrawer(this: any, model: ModelRecord) {
       this.inspectedModel = model;
-      if (typeof document !== 'undefined') {
+      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
         document.body.style.overflow = 'hidden';
       }
     },

@@ -54,13 +54,15 @@ import Toast from '../components/Toast.astro';
     <!-- OpenRouter Top Navbar -->
     <Header />
 
-    <!-- Main Content Container -->
-    <main class="mx-auto max-w-7xl w-full px-4 sm:px-6 pb-24 pt-1 grow">
-      <TabModels />
-    </main>
+    <!-- Main Content Container with VS Code Style Integrated Side Panel -->
+    <div class="mx-auto max-w-[1600px] w-full px-4 sm:px-6 pb-24 pt-1 grow flex items-start gap-4 transition-all">
+      <main class="flex-1 min-w-0 transition-all duration-200">
+        <TabModels />
+      </main>
 
-    <!-- Slide-Over Model Inspector Drawer -->
-    <ModelDrawer />
+      <!-- VS Code Style In-Place Side Panel (Desktop) & Mobile Sheet (Mobile) -->
+      <ModelDrawer />
+    </div>
 
     <!-- Mobile Bottom Floating Navigation -->
     <MobileNav />
