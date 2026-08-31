@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import type { Context, Next } from 'hono';
 import { cors } from 'hono/cors';
 import { AA_MODELS_URL, SyncError, syncAaModels } from './aaService';
 import defaultModels from '../data/models.json';
@@ -14,6 +15,39 @@ export const app = new Hono<{ Bindings: Bindings }>().basePath('/api');
 // deliberately same-origin and receive no Access-Control-Allow-Origin header.
 app.use('/health', cors());
 app.use('/models', cors());
+
+function isCrossOriginMutation(request: Request): boolean {
+  const fetchSite = request.headers.get('sec-fetch-site');
+  if (fetchSite && fetchSite !== 'same-origin' && fetchSite !== 'none') {
+    return true;
+  }
+
+  const origin = request.headers.get('origin');
+  if (!origin || origin === new URL(request.url).origin) {
+    return false;
+  }
+
+  try {
+    return new URL(origin).origin !== new URL(request.url).origin;
+  } catch {
+    return true;
+  }
+}
+
+async function requireSameOriginMutation(c: Context, next: Next) {
+  if (isCrossOriginMutation(c.req.raw)) {
+    return c.json({
+      ok: false,
+      code: 'CROSS_ORIGIN_FORBIDDEN',
+      error: 'Cross-origin mutation requests are not allowed.',
+    }, 403);
+  }
+
+  await next();
+}
+
+app.use('/test-aa', requireSameOriginMutation);
+app.use('/sync', requireSameOriginMutation);
 
 function getConfiguredApiKey(bindingKey?: string): string {
   const processKey = typeof process !== 'undefined' ? process.env?.AA_API_KEY : undefined;

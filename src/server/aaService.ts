@@ -11,6 +11,12 @@ export const AA_ORIGIN = new URL(AA_MODELS_URL).origin;
  */
 export const MAX_SYNC_PAGES = 25;
 
+/**
+ * Hard raw-record budget for one synchronization attempt. A page that would
+ * exceed this total is rejected before any of its records are accepted.
+ */
+export const MAX_RECORDS = 10_000;
+
 export type SyncErrorCode =
   | 'INVALID_PAGINATION_URL'
   | 'INVALID_RESPONSE'
@@ -140,6 +146,9 @@ export async function syncAaModels(
     }
 
     const page = parsePage(payload);
+    if (records.length + page.records.length > MAX_RECORDS) {
+      throw new SyncError('SYNC_INCOMPLETE', `Artificial Analysis record limit (${MAX_RECORDS} records) reached.`);
+    }
     records.push(...page.records);
     nextUrl = page.nextUrl;
   }

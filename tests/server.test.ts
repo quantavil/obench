@@ -1,6 +1,6 @@
 import { afterEach, expect, test } from 'bun:test';
 import { app } from '../src/server/app';
-import { AA_MODELS_URL, MAX_SYNC_PAGES } from '../src/server/aaService';
+import { AA_MODELS_URL, MAX_RECORDS, MAX_SYNC_PAGES } from '../src/server/aaService';
 
 const originalFetch = globalThis.fetch;
 
@@ -26,10 +26,11 @@ function aaRecord(id: string) {
 function syncRequest(
   env: { AA_API_KEY?: string } = {},
   body: Record<string, unknown> = {},
+  headers: Record<string, string> = {},
 ) {
   return app.request('/api/sync', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   }, env);
 }
@@ -84,6 +85,59 @@ test('sync uses only the configured API key and ignores a body key', async () =>
   expect(response.status).toBe(200);
   expect(bodyOnlyResponse.status).toBe(400);
   expect(sentKeys).toEqual(['configured-key']);
+});
+
+test('sync rejects a cross-origin POST before calling upstream', async () => {
+  let fetches = 0;
+  stubFetch(async () => {
+    fetches += 1;
+    return Response.json({ data: [aaRecord('unsafe')] });
+  });
+
+  const response = await syncRequest({ AA_API_KEY: 'key' }, {}, {
+    Origin: 'https://evil.example',
+  });
+  const json = await response.json();
+
+  expect(response.status).toBe(403);
+  expect(json).toMatchObject({ ok: false, code: 'CROSS_ORIGIN_FORBIDDEN' });
+  expect(fetches).toBe(0);
+});
+
+test('test-aa rejects cross-site fetch metadata before calling upstream', async () => {
+  let fetches = 0;
+  stubFetch(async () => {
+    fetches += 1;
+    return Response.json({ ok: true });
+  });
+
+  const response = await app.request('/api/test-aa', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Sec-Fetch-Site': 'cross-site',
+    },
+    body: JSON.stringify({}),
+  }, { AA_API_KEY: 'key' });
+
+  expect(response.status).toBe(403);
+  expect(fetches).toBe(0);
+});
+
+test('sync preserves same-origin browser requests', async () => {
+  let fetches = 0;
+  stubFetch(async () => {
+    fetches += 1;
+    return Response.json({ data: [aaRecord('safe')] });
+  });
+
+  const response = await syncRequest({ AA_API_KEY: 'key' }, {}, {
+    Origin: 'http://localhost',
+    'Sec-Fetch-Site': 'same-origin',
+  });
+
+  expect(response.status).toBe(200);
+  expect(fetches).toBe(1);
 });
 
 test('sync rejects an off-origin next page without forwarding the API key', async () => {
@@ -141,6 +195,35 @@ test('sync fails instead of returning success when the page budget is exhausted'
   expect(json).toMatchObject({ ok: false, code: 'SYNC_INCOMPLETE' });
   expect(json.error).toContain('limit');
   expect(fetches).toBe(MAX_SYNC_PAGES);
+});
+
+test('sync allows the record boundary and rejects the page that would exceed it', async () => {
+  stubFetch(async () => Response.json({ data: Array(MAX_RECORDS).fill(null) }));
+
+  const boundaryResponse = await syncRequest({ AA_API_KEY: 'key' });
+  const boundaryJson = await boundaryResponse.json();
+
+  expect(boundaryResponse.status).toBe(200);
+  expect(boundaryJson).toMatchObject({ totalRaw: MAX_RECORDS, complete: true });
+
+  let fetches = 0;
+  stubFetch(async () => {
+    fetches += 1;
+    return fetches === 1
+      ? Response.json({
+        data: Array(MAX_RECORDS - 1).fill(null),
+        pagination: { next_page_url: `${AA_MODELS_URL}?page=2` },
+      })
+      : Response.json({ data: [null, null] });
+  });
+
+  const overflowResponse = await syncRequest({ AA_API_KEY: 'key' });
+  const overflowJson = await overflowResponse.json();
+
+  expect(overflowResponse.status).toBe(502);
+  expect(overflowJson).toMatchObject({ ok: false, code: 'SYNC_INCOMPLETE' });
+  expect(overflowJson.error).toContain('record limit');
+  expect(fetches).toBe(2);
 });
 
 test('sync skips malformed records and reports complete synchronization metadata', async () => {
