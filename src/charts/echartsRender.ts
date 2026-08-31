@@ -86,6 +86,7 @@ export function renderEChartsPlot(
     }));
 
     option = {
+      aria: { enabled: true },
       animation: false,
       animationDuration: 0,
       animationDurationUpdate: 0,
@@ -168,6 +169,7 @@ export function renderEChartsPlot(
     }));
 
     option = {
+      aria: { enabled: true },
       animation: false,
       animationDuration: 0,
       animationDurationUpdate: 0,
@@ -273,6 +275,7 @@ export function renderEChartsPlot(
     });
 
     option = {
+      aria: { enabled: true },
       animation: false,
       animationDuration: 0,
       animationDurationUpdate: 0,
@@ -433,6 +436,7 @@ export function renderEChartsTimeline(
   }
 
   const option = {
+    aria: { enabled: true },
     animation: false,
     animationDuration: 0,
     animationDurationUpdate: 0,

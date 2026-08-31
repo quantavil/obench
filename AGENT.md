@@ -16,8 +16,9 @@ Open-source AI intelligence, benchmark, and token pricing workbench powered by A
 - `src/utils/formatters.ts`: Formats costs, dates, numbers.
 - `src/components/Icons.astro`: Centralized SVG sprite symbols repository for all UI icons, metric indicators, and provider brand logos (strict zero-emoji policy).
 - `src/utils/providers.ts`: Provider colors and SVG symbol references (`#icon-provider-*`).
+- `src/store/inspector.ts`: Viewport-safe inspector focus trapping and scroll-lock management.
 - `scripts/verify_ui.py`: Playwright automated UI verification and multi-viewport screenshot capture suite.
-- `tests/`: Pure TypeScript `bun test` suites (`aaNormalize`, `charts`, `formatters`, `server`, `store`).
+- `tests/`: Pure TypeScript `bun test` suites (`aaNormalize`, `charts`, `formatters`, `server`, `store`, `uiMarkup`).
 
 ## Architecture & Commands
 - Dev server: `bun run dev` (starts local Astro dev server at `http://localhost:4321`).

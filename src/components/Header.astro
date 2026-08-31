@@ -4,8 +4,8 @@
 
     <!-- Left: Brand Logo & Title -->
     <div class="flex items-center gap-3 shrink-0">
-      <a href="#models" @click="modelsViewMode = 'table'" class="flex items-center gap-2.5 group cursor-pointer">
-        <div class="w-8 h-8 rounded-[9px] bg-[var(--strong)] text-[var(--glass-bg-hi)] flex items-center justify-center group-hover:scale-[1.02] transition-transform shadow-xs">
+      <a href="#models" @click="modelsViewMode = 'table'" class="flex items-center gap-2.5 group cursor-pointer" aria-label="OBench Home">
+        <div class="w-8 h-8 rounded-[9px] bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] flex items-center justify-center group-hover:scale-[1.02] transition-transform shadow-xs">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
@@ -13,7 +13,7 @@
         <div class="flex items-center gap-2">
           <span class="font-bold text-[15px] tracking-tight text-[var(--strong)]">OBench</span>
           <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--chip-bg)] border border-[var(--glass-brd)] px-2 py-0.5 text-[11px] font-mono font-medium text-[var(--soft)]">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse"></span>
             <span x-text="`${data.models.length}`"></span>
             <span class="text-[var(--muted)] hidden xs:inline">models</span>
           </span>
@@ -34,7 +34,7 @@
           x-model="search"
           placeholder="Search models, providers, capabilities…"
           aria-label="Search models"
-          class="w-full h-9 pl-9 pr-20 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)] focus:ring-2 focus:ring-[var(--strong)]/10 transition-all"
+          class="w-full h-9 pl-9 pr-20 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)] dark:focus:border-[var(--accent)] transition-all"
         />
         <div class="absolute right-2 flex items-center gap-1.5">
           <template x-if="search">
@@ -58,20 +58,21 @@
     <!-- Right: Actions -->
     <div class="flex items-center gap-2 shrink-0">
 
-      <!-- Compare Mode Toggle Button (Beside Sync) -->
+      <!-- Compare Mode Toggle Button -->
       <button
         @click="showCompareCol && comparedModelIds.length >= 2 && modelsViewMode === 'table' ? applyComparison() : toggleCompareCol()"
         class="h-8 px-3 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs select-none"
-        :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black border-transparent shadow-xs ring-2 ring-emerald-500/50' : 'border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] hover:bg-[var(--chip-bg)]'"
+        :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] border-transparent shadow-xs ring-2 ring-[var(--accent)]/50' : 'border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] hover:bg-[var(--chip-bg)]'"
         :title="showCompareCol ? 'Toggle VS comparison column' : 'Enable VS comparison mode'"
         aria-label="Toggle comparison"
+        :aria-pressed="showCompareCol || modelsViewMode === 'compare'"
       >
         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-compare" /></svg>
         <span>Compare</span>
         <template x-if="comparedModelIds.length > 0">
           <span
             class="min-w-4 h-4 px-1 rounded-full text-[10px] flex items-center justify-center font-bold font-mono transition-colors"
-            :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white' : 'bg-emerald-600 text-white'"
+            :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--accent)] text-[#090d10]' : 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10]'"
             x-text="comparedModelIds.length"
           ></span>
         </template>
@@ -81,6 +82,7 @@
       <button
         @click="syncModels()"
         :disabled="syncing"
+        :aria-busy="syncing"
         class="h-8 px-3 text-xs font-medium rounded-full border border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--chip-bg)] disabled:opacity-50 transition-colors shadow-2xs"
         title="Sync live telemetry from Artificial Analysis"
         aria-label="Sync live telemetry"
@@ -96,7 +98,7 @@
         @click="toggleTheme()"
         class="w-8 h-8 flex items-center justify-center rounded-full border border-transparent text-[var(--muted)] hover:text-[var(--strong)] hover:bg-[var(--chip-bg)] hover:border-[var(--glass-brd)] transition-colors cursor-pointer"
         title="Toggle dark/light theme"
-        aria-label="Toggle theme"
+        :aria-label="document.documentElement.classList.contains('dark') ? 'Switch to light theme' : 'Switch to dark theme'"
       >
         <svg class="w-4 h-4 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="4"/>
@@ -111,7 +113,7 @@
   </div>
 
   <!-- Mobile Search Bar -->
-  <div class="md:hidden px-4 pb-3 pt-0">
+  <div class="md:hidden px-4 pb-3 pt-0" role="search">
     <div class="relative flex items-center w-full">
       <svg class="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
@@ -121,14 +123,14 @@
         x-model="search"
         placeholder="Search models, providers…"
         aria-label="Search models"
-        class="w-full h-9 pl-8 pr-8 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)]"
+        class="w-full h-9 pl-8 pr-8 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)] dark:focus:border-[var(--accent)]"
       />
       <template x-if="search">
         <button
           @click="search = ''"
           class="absolute right-2.5 w-4 h-4 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer"
           title="Clear"
-          aria-label="Clear"
+          aria-label="Clear search"
         >
           <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-close" /></svg>
         </button>

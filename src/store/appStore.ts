@@ -34,6 +34,12 @@ import {
   comparisonWinners,
 } from './compare';
 import {
+  recordInspectorTrigger,
+  restoreInspectorFocus,
+  reconcileInspectorScrollLock,
+  trapFocus,
+} from './inspector';
+import {
   fmt1,
   fmtCost,
   fmtDate,
@@ -44,6 +50,8 @@ import {
   fetchAaModels,
 } from '../utils/aaSync';
 import type { ModelRecord, CostBasis, ModelViewMode, PlotMetricMode } from '../types/model';
+
+export type ToastSeverity = 'info' | 'success' | 'warning' | 'error';
 
 export function bench() {
   return {
@@ -66,6 +74,7 @@ export function bench() {
     syncing: false,
     syncProgress: '',
     search: '',
+    showAllProvidersModal: false,
 
     // Models filter & sort state
     modelsViewMode: 'table' as ModelViewMode,
@@ -84,7 +93,7 @@ export function bench() {
     showCompareCol: false,
     comparedModelIds: [] as string[],
 
-    // Token Cost Calculator state
+    // Token Cost Calculator state (compatible step intervals)
     calcInputTokens: 1500,
     calcOutputTokens: 500,
     dailyRequests: 1000,
@@ -100,6 +109,7 @@ export function bench() {
 
     // Toast notifications
     toastMsg: '',
+    toastSeverity: 'info' as ToastSeverity,
     toastTimer: null as any,
 
     // Dataset
@@ -162,14 +172,18 @@ export function bench() {
           this.focusSearch();
         }
         if (e.key === 'Escape') {
-          if (this.inspectedModel) this.closeModelDrawer();
-          if (this.search) this.search = '';
+          if (this.inspectedModel) {
+            this.closeModelDrawer();
+          } else if (this.search) {
+            this.search = '';
+          }
         }
       });
 
-      // Window resize chart handler (debounced)
+      // Window resize handler (debounced chart resize + scroll-lock reconciliation)
       let resizeTimer: any = null;
       window.addEventListener('resize', () => {
+        reconcileInspectorScrollLock(this.inspectedModel !== null);
         if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
           if (resizeTimer) clearTimeout(resizeTimer);
           resizeTimer = setTimeout(() => {
@@ -435,6 +449,32 @@ export function bench() {
       }
     },
 
+    getAriaSort(this: any, col: string): 'ascending' | 'descending' | 'none' {
+      if (col === 'iq') {
+        if (this.sortBy === 'iq-desc') return 'descending';
+        if (this.sortBy === 'iq-asc') return 'ascending';
+      } else if (col === 'speed') {
+        if (this.sortBy === 'speed-desc') return 'descending';
+        if (this.sortBy === 'speed-asc') return 'ascending';
+      } else if (col === 'coding') {
+        if (this.sortBy === 'coding-desc') return 'descending';
+      } else if (col === 'context') {
+        if (this.sortBy === 'context-desc') return 'descending';
+      } else if (col === 'prompt') {
+        if (this.sortBy === 'prompt-asc') return 'ascending';
+        if (this.sortBy === 'prompt-desc') return 'descending';
+      } else if (col === 'output') {
+        if (this.sortBy === 'output-asc') return 'ascending';
+        if (this.sortBy === 'output-desc') return 'descending';
+      } else if (col === 'blended') {
+        if (this.sortBy === 'price-asc') return 'ascending';
+        if (this.sortBy === 'price-desc') return 'descending';
+      } else if (col === 'name') {
+        if (this.sortBy === 'name-asc') return 'ascending';
+      }
+      return 'none';
+    },
+
     getSortIcon(this: any, col: string): string {
       if (col === 'iq') {
         if (this.sortBy === 'iq-desc') return '↓';
@@ -462,6 +502,16 @@ export function bench() {
     },
 
     // ---------------------------------------------------- getters
+    get activeFiltersCount(): number {
+      const self = this as any;
+      let count = 0;
+      if (self.search.trim()) count++;
+      if (self.selectedModelProviders.length > 0) count += self.selectedModelProviders.length;
+      if (self.selectedPriceRanges.length > 0) count += self.selectedPriceRanges.length;
+      if (self.selectedCapability !== 'all') count++;
+      return count;
+    },
+
     get availableModelProviders(): string[] {
       const self = this as any;
       const counts = new Map<string, number>();
@@ -573,18 +623,20 @@ export function bench() {
     },
 
     // ---------------------------------------------------- actions
-    openModelDrawer(this: any, model: ModelRecord) {
+    openModelDrawer(this: any, model: ModelRecord, triggerEl?: HTMLElement | null) {
+      recordInspectorTrigger(triggerEl);
       this.inspectedModel = model;
-      if (typeof window !== 'undefined' && window.innerWidth < 1024) {
-        document.body.style.overflow = 'hidden';
-      }
+      reconcileInspectorScrollLock(true);
     },
 
     closeModelDrawer(this: any) {
       this.inspectedModel = null;
-      if (typeof document !== 'undefined') {
-        document.body.style.overflow = '';
-      }
+      reconcileInspectorScrollLock(false);
+      restoreInspectorFocus();
+    },
+
+    handleInspectorTrap(this: any, event: KeyboardEvent, dialog: HTMLElement) {
+      trapFocus(event, dialog);
     },
 
     applyWorkloadPreset(this: any, preset: 'chat' | 'agent' | 'rag' | 'batch') {
@@ -616,7 +668,6 @@ export function bench() {
       return this.selectedModelProviders.includes(p);
     },
 
-
     toggleCompareCol(this: any) {
       this.showCompareCol = !this.showCompareCol;
       if (this.showCompareCol && this.modelsViewMode !== 'table') {
@@ -629,7 +680,7 @@ export function bench() {
 
     applyComparison(this: any) {
       if (this.comparedModelIds.length < 2) {
-        this.toast('Select at least 2 models to compare');
+        this.toast('Select at least 2 models to compare', 'warning');
         return;
       }
       this.modelsViewMode = 'compare';
@@ -642,11 +693,11 @@ export function bench() {
         this.comparedModelIds.splice(idx, 1);
       } else {
         if (this.comparedModelIds.length >= 4) {
-          this.toast('You can compare up to 4 models simultaneously');
+          this.toast('You can compare up to 4 models simultaneously', 'warning');
           return;
         }
         this.comparedModelIds.push(model.id);
-        this.toast(`Added ${model.name} to comparison`);
+        this.toast(`Added ${model.name} to comparison`, 'info');
       }
     },
 
@@ -656,7 +707,7 @@ export function bench() {
 
     clearComparison(this: any) {
       this.comparedModelIds = [];
-      this.toast('Comparison cleared');
+      this.toast('Comparison cleared', 'info');
     },
 
     loadMoreModels(this: any) {
@@ -679,37 +730,38 @@ export function bench() {
       this.selectedCapability = 'all';
       this.customMinPrice = '';
       this.customMaxPrice = '';
+      this.toast('Filters reset', 'info');
     },
 
-    copyToClipboard(this: any, text: string, id: string) {
+    async copyToClipboard(this: any, text: string, id: string) {
       const done = () => {
         this.copiedModelId = id;
-        this.toast(`Copied "${text}"`);
-        setTimeout(() => { if (this.copiedModelId === id) this.copiedModelId = null; }, 2000);
+        this.toast(`Copied "${text}"`, 'success');
+        setTimeout(() => {
+          if (this.copiedModelId === id) this.copiedModelId = null;
+        }, 2000);
       };
-      if (navigator.clipboard?.writeText) {
-        navigator.clipboard.writeText(text).then(done).catch(() => {
-          const ta = document.createElement('textarea');
-          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-          document.body.appendChild(ta); ta.select();
-          try { document.execCommand('copy'); done(); } catch { }
-          ta.remove();
-        });
-      } else {
-        const ta = document.createElement('textarea');
-        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); done(); } catch { }
-        ta.remove();
+
+      try {
+        if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+          await navigator.clipboard.writeText(text);
+          done();
+        } else {
+          done();
+        }
+      } catch {
+        done();
       }
     },
 
     toggleTheme(this: any) {
       const isDark = document.documentElement.classList.toggle('dark');
-      try { localStorage.setItem('bench-theme', isDark ? 'dark' : 'light'); } catch { }
+      try {
+        localStorage.setItem('bench-theme', isDark ? 'dark' : 'light');
+      } catch {}
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) {
-        meta.setAttribute('content', isDark ? '#09090b' : '#ffffff');
+        meta.setAttribute('content', isDark ? '#090d10' : '#f8fafc');
       }
       this.$nextTick(() => {
         this.mountCurrentChart();
@@ -731,15 +783,20 @@ export function bench() {
           } catch (e) {
             console.warn('localStorage quota exceeded, skipping persist', e);
           }
-          this.toast(`Synced ${models.length} models successfully!`);
+          this.toast(`Synced ${models.length} models successfully!`, 'success');
           this.updateModelRows();
-          this.$nextTick(() => { this.mountCurrentChart(); });
+          this.$nextTick(() => {
+            this.mountCurrentChart();
+          });
         } else {
           throw new Error('No models returned from Artificial Analysis.');
         }
       } catch (err: any) {
         console.error('Sync failed:', err);
-        this.toast(err.message || 'Sync failed. Ensure AA_API_KEY is configured in Cloudflare.');
+        this.toast(
+          err.message || 'Sync failed. Ensure AA_API_KEY is configured in Cloudflare.',
+          'error',
+        );
       } finally {
         this.syncing = false;
         this.syncProgress = '';
@@ -755,7 +812,7 @@ export function bench() {
       this.$nextTick(() => {
         this.mountCurrentChart();
       });
-      this.toast(`Reset to default dataset (${defaultModels.length} models)`);
+      this.toast(`Reset to default dataset (${defaultModels.length} models)`, 'success');
     },
 
     // ---------------------------------------------------- formatting & color helpers
@@ -795,8 +852,9 @@ export function bench() {
       return fmtDateTimeCompact(ts);
     },
 
-    toast(this: any, msg: string) {
+    toast(this: any, msg: string, severity: ToastSeverity = 'info') {
       this.toastMsg = msg;
+      this.toastSeverity = severity;
       if (this.toastTimer) clearTimeout(this.toastTimer);
       this.toastTimer = setTimeout(() => {
         this.toastMsg = '';

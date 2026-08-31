@@ -15,7 +15,7 @@ import Toast from '../components/Toast.astro';
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <meta name="robots" content="noindex, nofollow">
   <meta name="color-scheme" content="dark light">
-  <meta name="theme-color" content="#09090b">
+  <meta name="theme-color" content="#090d10">
   <title>OBench · Intelligence & Pricing Explorer</title>
 
   <!-- Apply saved theme before first paint. Dark is default. -->
@@ -23,7 +23,7 @@ import Toast from '../components/Toast.astro';
     const savedTheme = localStorage.getItem('bench-theme');
     if (savedTheme === 'light') {
       document.documentElement.classList.remove('dark');
-      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#fcfcfc');
+      document.querySelector('meta[name="theme-color"]')?.setAttribute('content', '#f8fafc');
     } else {
       document.documentElement.classList.add('dark');
     }
@@ -36,7 +36,7 @@ import Toast from '../components/Toast.astro';
     rel="stylesheet">
 </head>
 
-<body class="h-full font-sans antialiased text-[var(--strong)] bg-[var(--bg)] selection:bg-[#09090b] selection:text-white dark:selection:bg-white dark:selection:text-black">
+<body class="h-full font-sans antialiased text-[var(--strong)] bg-[var(--bg)] selection:bg-[var(--accent)] selection:text-[#090d10]">
 
   <Icons />
 
@@ -44,17 +44,17 @@ import Toast from '../components/Toast.astro';
 
   <noscript>
     <div style="max-width:32rem;margin:4rem auto;padding:0 1.5rem;font-family:sans-serif">
-      <h1 style="font-size:2rem;font-weight:800">OpenBench</h1>
+      <h1 style="font-size:2rem;font-weight:800">OBench</h1>
       <p style="margin-top:.5rem;color:var(--soft)">This benchmarking explorer requires JavaScript to run.</p>
     </div>
   </noscript>
 
   <div x-data="bench" x-cloak class="min-h-full flex flex-col">
-    <!-- OpenRouter Top Navbar -->
+    <!-- Top Navbar -->
     <Header />
 
-    <!-- Main Content Container with Symmetrical Gutters -->
-    <main class="mx-auto max-w-[1380px] w-full px-4 sm:px-8 pb-24 pt-1 grow">
+    <!-- Main Content Container with Symmetrical Gutters and Mobile Padding -->
+    <main class="mx-auto max-w-[1380px] w-full px-4 sm:px-8 pb-32 pt-1 grow">
       <TabModels />
     </main>
 
