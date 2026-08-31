@@ -5,7 +5,7 @@
     <!-- Left: Brand Logo & Title -->
     <div class="flex items-center gap-3 shrink-0">
       <a href="#models" @click="modelsViewMode = 'table'" class="flex items-center gap-2.5 group cursor-pointer" aria-label="OBench Home">
-        <div class="w-8 h-8 rounded-[9px] bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] flex items-center justify-center group-hover:scale-[1.02] transition-transform shadow-xs">
+        <div class="w-8 h-8 rounded-[9px] bg-[var(--accent)] text-[#090d10] flex items-center justify-center group-hover:scale-[1.02] transition-transform shadow-xs">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
@@ -62,7 +62,7 @@
       <button
         @click="showCompareCol && comparedModelIds.length >= 2 && modelsViewMode === 'table' ? applyComparison() : toggleCompareCol()"
         class="h-8 px-3 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs select-none"
-        :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] border-transparent shadow-xs ring-2 ring-[var(--accent)]/50' : 'border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] hover:bg-[var(--chip-bg)]'"
+        :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--accent)] text-[#090d10] border-[var(--accent)] shadow-xs' : 'border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] hover:bg-[var(--chip-bg)]'"
         :title="showCompareCol ? 'Toggle VS comparison column' : 'Enable VS comparison mode'"
         aria-label="Toggle comparison"
         :aria-pressed="showCompareCol || modelsViewMode === 'compare'"

@@ -372,16 +372,16 @@ body {
 }
 
 .chip-active {
-  background: var(--strong) !important;
-  color: var(--bg) !important;
-  border-color: var(--strong) !important;
+  background: var(--accent) !important;
+  color: #090d10 !important;
+  border-color: var(--accent) !important;
   font-weight: 600;
 }
 
 .dark .chip-active {
-  background: var(--strong) !important;
+  background: var(--accent) !important;
   color: #090d10 !important;
-  border-color: var(--strong) !important;
+  border-color: var(--accent) !important;
 }
 
 .seg {
@@ -587,16 +587,16 @@ kbd {
   border-color: rgba(168, 85, 247, 0.15);
 }
 .iq-badge {
-  background: var(--strong);
-  color: var(--bg);
-  border: 1px solid var(--strong);
+  background: var(--accent);
+  color: #090d10;
+  border: 1px solid var(--accent);
   font-weight: 700;
   letter-spacing: -0.02em;
 }
 .dark .iq-badge {
-  background: var(--strong);
+  background: var(--accent);
   color: #090d10;
-  border-color: var(--strong);
+  border-color: var(--accent);
 }
 .iq-badge-subtle {
   background: #f1f5f9;
