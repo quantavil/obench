@@ -1,6 +1,33 @@
 import { describe, expect, test } from 'bun:test';
 import { computeEfficiencyFrontier, computeSotaProgression } from '../src/utils/frontier';
+import { getLogAxisBounds } from '../src/charts/echartsRender';
 import type { ModelRecord } from '../src/types/model';
+
+describe('getLogAxisBounds', () => {
+  test('computes powers of 10 enclosing all positive costs', () => {
+    const bounds = getLogAxisBounds([0.05, 1.5, 262.5]);
+    expect(bounds.min).toBe(0.01);
+    expect(bounds.max).toBe(1000);
+  });
+
+  test('ignores zero, negative, null, and non-finite costs', () => {
+    const bounds = getLogAxisBounds([0, -1, NaN, Infinity, 0.3, 15]);
+    expect(bounds.min).toBe(0.1);
+    expect(bounds.max).toBe(100);
+  });
+
+  test('handles single value', () => {
+    const bounds = getLogAxisBounds([10]);
+    expect(bounds.min).toBe(10);
+    expect(bounds.max).toBe(10);
+  });
+
+  test('handles empty array with fallback', () => {
+    const bounds = getLogAxisBounds([]);
+    expect(bounds.min).toBe(0.01);
+    expect(bounds.max).toBe(100);
+  });
+});
 
 describe('computeEfficiencyFrontier', () => {
   test('returns empty when no intelligence index', () => {

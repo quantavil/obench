@@ -1,6 +1,7 @@
 import * as echarts from 'echarts';
 import { providerColor } from '../utils/providers';
-import { computeEfficiencyFrontier, computeSotaProgression, calculateModelCost } from '../utils/frontier';
+import { computeEfficiencyFrontier, computeSotaProgression } from '../utils/frontier';
+import { calculateModelCost } from '../utils/pricing';
 import { fmtCost, fmt1 } from '../utils/formatters';
 import type { ModelRecord, CostBasis, PlotMetricMode } from '../types/model';
 
@@ -15,6 +16,25 @@ export function destroyActiveChart(): void {
   }
 }
 
+export function resizeActiveChart(): void {
+  if (activeChartInstance) {
+    try {
+      activeChartInstance.resize();
+    } catch (e) {}
+  }
+}
+
+export function getLogAxisBounds(costs: number[]): { min: number; max: number } {
+  const valid = costs.filter((cost) => Number.isFinite(cost) && cost > 0);
+  if (valid.length === 0) return { min: 0.01, max: 100 };
+  const min = Math.min(...valid);
+  const max = Math.max(...valid);
+  return {
+    min: 10 ** Math.floor(Math.log10(min)),
+    max: 10 ** Math.ceil(Math.log10(max)),
+  };
+}
+
 export function renderEChartsPlot(
   containerEl: HTMLElement | null,
   models: ModelRecord[],
@@ -22,8 +42,7 @@ export function renderEChartsPlot(
   metricMode: PlotMetricMode = 'iq-cost',
   isDark = true
 ): echarts.ECharts | undefined {
-  if (!containerEl) return;
-  destroyActiveChart();
+  if (!containerEl || containerEl.clientWidth === 0 || containerEl.clientHeight === 0) return;
 
   const scored = (models || []).filter((m) => m && m.intelligence != null);
   if (!scored.length) {
@@ -42,8 +61,12 @@ export function renderEChartsPlot(
     laserColor: isDark ? '#34d399' : '#059669',
   };
 
-  const chart = echarts.init(containerEl, null, { renderer: 'svg' });
-  activeChartInstance = chart;
+  let chart = activeChartInstance;
+  if (!chart || chart.getDom() !== containerEl) {
+    destroyActiveChart();
+    chart = echarts.init(containerEl, null, { renderer: 'svg' });
+    activeChartInstance = chart;
+  }
 
   let option: any = {};
 
@@ -221,16 +244,13 @@ export function renderEChartsPlot(
           unpriced: costVal == null || costVal === 0,
         };
       })
-      .filter((m) => m.realCost != null && m.realCost !== 0 && m.cost > 0);
+      .filter((m) => m.realCost != null && m.realCost > 0);
 
-    // Frontier should also ignore -- models
-    const frontier = computeEfficiencyFrontier(
-      models.filter((m) => {
-        const c = calculateModelCost(m as any, costBasis);
-        return c != null && c !== 0;
-      }),
-      costBasis
-    );
+    const validCosts = withCost.map((m) => m.cost).filter((c) => Number.isFinite(c) && c > 0);
+    const bounds = getLogAxisBounds(validCosts);
+
+    // Frontier should also ignore unpriced models
+    const frontier = computeEfficiencyFrontier(models, costBasis);
     const frontierSet = new Set(frontier.map((m) => m.id));
 
     const scatterData = withCost.map((m) => ({
@@ -268,9 +288,9 @@ export function renderEChartsPlot(
         formatter: (params: any) => {
           const m: any = params.data.model;
           if (!m) return '';
-          const costStr = m.realCost !== null ? (m.realCost === 0 ? '--' : `${fmtCost(m.realCost)}/1M`) : '--';
-          const inStr = m.price1mInput !== null ? (m.price1mInput === 0 ? '--' : `$${m.price1mInput}`) : '--';
-          const outStr = m.price1mOutput !== null ? (m.price1mOutput === 0 ? '--' : `$${m.price1mOutput}`) : '--';
+          const costStr = m.realCost !== null ? (m.realCost === 0 ? 'Free' : `${fmtCost(m.realCost)}/1M`) : '--';
+          const inStr = m.price1mInput !== null ? (m.price1mInput === 0 ? 'Free' : `$${m.price1mInput}`) : '--';
+          const outStr = m.price1mOutput !== null ? (m.price1mOutput === 0 ? 'Free' : `$${m.price1mOutput}`) : '--';
 
           return `
             <div style="padding: 12px 14px; min-width: 220px; font-family: 'Geist', system-ui, sans-serif;">
@@ -304,8 +324,8 @@ export function renderEChartsPlot(
         nameLocation: 'middle',
         nameGap: 34,
         nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
-        min: 0.01,
-        max: 120,
+        min: bounds.min,
+        max: bounds.max,
         axisLabel: { color: themeColors.subText, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, formatter: (val: any) => `$${val}` },
         axisLine: { lineStyle: { color: themeColors.axisLine } },
         splitLine: { lineStyle: { color: themeColors.gridLine, type: 'dashed' } },
@@ -350,7 +370,7 @@ export function renderEChartsPlot(
     };
   }
 
-  chart.setOption(option);
+  chart.setOption(option, true);
   return chart;
 }
 
@@ -359,8 +379,7 @@ export function renderEChartsTimeline(
   models: ModelRecord[],
   isDark = true
 ): echarts.ECharts | undefined {
-  if (!containerEl) return;
-  destroyActiveChart();
+  if (!containerEl || containerEl.clientWidth === 0 || containerEl.clientHeight === 0) return;
 
   const parsed = (models || [])
     .filter((m) => m && m.intelligence != null && m.releasedAt)
@@ -406,8 +425,12 @@ export function renderEChartsTimeline(
     laserColor: isDark ? '#34d399' : '#059669',
   };
 
-  const chart = echarts.init(containerEl, null, { renderer: 'svg' });
-  activeChartInstance = chart;
+  let chart = activeChartInstance;
+  if (!chart || chart.getDom() !== containerEl) {
+    destroyActiveChart();
+    chart = echarts.init(containerEl, null, { renderer: 'svg' });
+    activeChartInstance = chart;
+  }
 
   const option = {
     animation: false,

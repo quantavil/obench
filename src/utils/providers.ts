@@ -89,9 +89,9 @@ export function extractModelBadges(model: ModelRecord | null | undefined): Capab
   }
 
   // Large context window badge
-  if (model.contextWindow >= 1000000) {
+  if (model.contextWindow !== null && model.contextWindow >= 1000000) {
     badges.push({ label: '1M+ ctx', type: 'ctx' });
-  } else if (model.contextWindow >= 200000) {
+  } else if (model.contextWindow !== null && model.contextWindow >= 200000) {
     badges.push({ label: '200k ctx', type: 'ctx' });
   }
 

@@ -1,7 +1,19 @@
 import { describe, expect, test } from 'bun:test';
-import { fmtDateTimeCompact, fmt1, fmtDate } from '../src/utils/formatters';
+import { fmtDateTimeCompact, fmt1, fmtDate, fmtCost } from '../src/utils/formatters';
 
 describe('formatters', () => {
+  test('formats zero as Free and null as unknown', () => {
+    expect(fmtCost(0)).toBe('Free');
+    expect(fmtCost(null)).toBe('--');
+  });
+
+  test('formats non-zero costs properly', () => {
+    expect(fmtCost(0.005)).toBe('$0.0050');
+    expect(fmtCost(0.05)).toBe('$0.050');
+    expect(fmtCost(0.75)).toBe('$0.75');
+    expect(fmtCost(15)).toBe('$15');
+    expect(fmtCost(150.5)).toBe('$151');
+  });
   test('fmtDateTimeCompact formats timestamp consistently', () => {
     const timestamp = Date.parse('2026-08-01T11:54:39.000Z');
     const result = fmtDateTimeCompact(timestamp);

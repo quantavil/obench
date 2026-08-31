@@ -1,5 +1,47 @@
 import { test, expect } from 'bun:test';
-import { normalizeAaRecords } from '../src/utils/aaNormalize';
+import { normalizeAaRecords, normalizeAaRecordsWithReport } from '../src/utils/aaNormalize';
+
+function aaRecord(id: string, overrides: Record<string, any> = {}) {
+  const evaluations: Record<string, any> = {};
+  if (overrides.intelligence !== undefined) {
+    evaluations.artificial_analysis_intelligence_index = overrides.intelligence;
+  } else if (overrides.evaluations?.artificial_analysis_intelligence_index !== undefined) {
+    evaluations.artificial_analysis_intelligence_index = overrides.evaluations.artificial_analysis_intelligence_index;
+  } else {
+    evaluations.artificial_analysis_intelligence_index = 75;
+  }
+  return {
+    id,
+    name: id,
+    model_creator: { name: 'Test Provider' },
+    evaluations: {
+      ...evaluations,
+      ...overrides.evaluations,
+    },
+    ...overrides,
+  };
+}
+
+test('skips malformed records and reports them', () => {
+  const result = normalizeAaRecordsWithReport([null, aaRecord('valid')]);
+  expect(result.models.map((model) => model.id)).toEqual(['valid']);
+  expect(result.skippedRecords).toBe(1);
+});
+
+test('keeps missing telemetry unknown', () => {
+  const [model] = normalizeAaRecords([aaRecord('sparse', { intelligence: 80 })]);
+  expect(model.codingIndex).toBeNull();
+  expect(model.mathIndex).toBeNull();
+  expect(model.reasoningIndex).toBeNull();
+  expect(model.contextWindow).toBeNull();
+  expect(model.maxOutputTokens).toBeNull();
+});
+
+test('does not collapse distinct long model ids', () => {
+  const prefix = 'a'.repeat(64);
+  const models = normalizeAaRecords([aaRecord(`${prefix}x`), aaRecord(`${prefix}y`)]);
+  expect(new Set(models.map((model) => model.id)).size).toBe(2);
+});
 
 test('normalizeAaRecords normalizes raw Artificial Analysis API records correctly with full schema', () => {
   const raw = [

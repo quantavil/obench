@@ -15,8 +15,8 @@ export interface ModelRecord {
   reasoningIndex: number | null;
   speedTps: number | null;
   latencyTtft: number | null;
-  contextWindow: number;
-  maxOutputTokens: number;
+  contextWindow: number | null;
+  maxOutputTokens: number | null;
   modalities: string[];
   isOpenWeights: boolean;
 }

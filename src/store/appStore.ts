@@ -13,6 +13,7 @@ import {
   renderEChartsPlot,
   renderEChartsTimeline,
   destroyActiveChart,
+  resizeActiveChart,
 } from '../charts/echartsRender';
 import {
   providerColor,
@@ -22,8 +23,16 @@ import {
 import {
   computeEfficiencyFrontier,
   computeSotaProgression,
-  calculateModelCost,
 } from '../utils/frontier';
+import {
+  calculateModelCost,
+  cachedInput,
+  batchInput,
+  batchOutput,
+} from '../utils/pricing';
+import {
+  comparisonWinners,
+} from './compare';
 import {
   fmt1,
   fmtCost,
@@ -83,7 +92,11 @@ export function bench() {
     useBatchPricing: false,
 
     // Cached derivations
+    cachedFilteredModels: [] as ModelRecord[],
     cachedModelRows: [] as Array<{ model: ModelRecord }>,
+    cachedPaginatedModels: [] as Array<{ model: ModelRecord }>,
+    cachedBestModel: null as ModelRecord | null,
+    cachedOptimalModels: [] as ModelRecord[],
 
     // Toast notifications
     toastMsg: '',
@@ -154,10 +167,14 @@ export function bench() {
         }
       });
 
-      // Window resize chart handler
+      // Window resize chart handler (debounced)
+      let resizeTimer: any = null;
       window.addEventListener('resize', () => {
         if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
-          this.mountCurrentChart();
+          if (resizeTimer) clearTimeout(resizeTimer);
+          resizeTimer = setTimeout(() => {
+            resizeActiveChart();
+          }, 100);
         }
       });
 
@@ -172,6 +189,7 @@ export function bench() {
       });
 
       this.$watch('modelsViewMode', () => {
+        this.updateOptimalModels();
         this.$nextTick(() => {
           this.mountCurrentChart();
         });
@@ -181,6 +199,10 @@ export function bench() {
         this.$nextTick(() => {
           this.mountCurrentChart();
         });
+      });
+
+      this.$watch('costBasis', () => {
+        this.updateOptimalModels();
       });
 
       this.$watch('inspectedModel', () => {
@@ -202,8 +224,6 @@ export function bench() {
     get modelFilterKey(): string {
       const self = this as any;
       return [
-        self.modelsViewMode,
-        self.plotMetric,
         self.sortBy,
         self.search,
         self.selectedModelProviders.slice().sort().join(','),
@@ -351,9 +371,33 @@ export function bench() {
         return (b.intelligence ?? -1) - (a.intelligence ?? -1);
       });
 
+      this.cachedFilteredModels = filtered;
       this.cachedModelRows = filtered.map((m: ModelRecord) => ({
         model: m,
       }));
+      this.cachedPaginatedModels = this.cachedModelRows.slice(0, this.modelsPageSize);
+
+      let best: ModelRecord | null = null;
+      for (const m of filtered) {
+        if (m.intelligence != null) {
+          if (!best || (best.intelligence != null && m.intelligence > best.intelligence)) {
+            best = m;
+          }
+        }
+      }
+      this.cachedBestModel = best;
+      this.updateOptimalModels();
+    },
+
+    updateOptimalModels(this: any) {
+      const models: ModelRecord[] = this.cachedFilteredModels || [];
+      if (this.modelsViewMode === 'plot') {
+        this.cachedOptimalModels = computeEfficiencyFrontier(models, this.costBasis);
+      } else if (this.modelsViewMode === 'timeline') {
+        this.cachedOptimalModels = computeSotaProgression(models);
+      } else {
+        this.cachedOptimalModels = [];
+      }
     },
 
     mountCurrentChart(this: any) {
@@ -433,7 +477,7 @@ export function bench() {
 
     get filteredModels(): ModelRecord[] {
       const self = this as any;
-      return self.cachedModelRows.map((r: any) => r.model);
+      return self.cachedFilteredModels || self.cachedModelRows.map((r: any) => r.model);
     },
 
     get rankedModelsByIntelligence(): Array<{ model: ModelRecord }> {
@@ -443,7 +487,7 @@ export function bench() {
 
     get paginatedModels(): Array<{ model: ModelRecord }> {
       const self = this as any;
-      return self.cachedModelRows.slice(0, self.modelsPageSize);
+      return self.cachedPaginatedModels || self.cachedModelRows.slice(0, self.modelsPageSize);
     },
 
     get comparedModels(): ModelRecord[] {
@@ -455,102 +499,45 @@ export function bench() {
 
     get bestModelInRange(): ModelRecord | null {
       const self = this as any;
-      const models: ModelRecord[] = self.filteredModels;
-      if (!models.length) return null;
-      let best: ModelRecord | null = null;
-      for (const m of models) {
-        if (m.intelligence != null) {
-          if (!best || (best.intelligence != null && m.intelligence > best.intelligence)) {
-            best = m;
-          }
-        }
-      }
-      return best;
+      return self.cachedBestModel;
     },
 
     get optimalModels(): ModelRecord[] {
       const self = this as any;
-      const models: ModelRecord[] = self.filteredModels;
-      if (self.modelsViewMode === 'plot') {
-        return computeEfficiencyFrontier(models, self.costBasis);
-      }
-      if (self.modelsViewMode === 'timeline') {
-        return computeSotaProgression(models);
-      }
-      return [];
+      return self.cachedOptimalModels || [];
     },
 
     get comparisonWinners(): Record<string, { iq: boolean; speed: boolean; cost: boolean; ttft: boolean }> {
       const self = this as any;
-      const result: Record<string, { iq: boolean; speed: boolean; cost: boolean; ttft: boolean }> = {};
-      const models: ModelRecord[] = self.comparedModels;
-      if (!models || models.length < 2) return result;
-
-      let bestIq = -Infinity;
-      let bestSpeed = -Infinity;
-      let bestCost = Infinity;
-      let bestTtft = Infinity;
-
-      let bestIqId = '';
-      let bestSpeedId = '';
-      let bestCostId = '';
-      let bestTtftId = '';
-
-      for (const m of models) {
-        if (m.intelligence != null && m.intelligence > bestIq) {
-          bestIq = m.intelligence;
-          bestIqId = m.id;
-        }
-        if (m.speedTps != null && m.speedTps > bestSpeed) {
-          bestSpeed = m.speedTps;
-          bestSpeedId = m.id;
-        }
-        const cost = calculateModelCost(m, self.costBasis);
-        if (cost != null && cost < bestCost) {
-          bestCost = cost;
-          bestCostId = m.id;
-        }
-        if (m.latencyTtft != null && m.latencyTtft < bestTtft) {
-          bestTtft = m.latencyTtft;
-          bestTtftId = m.id;
-        }
-      }
-
-      for (const m of models) {
-        result[m.id] = {
-          iq: m.id === bestIqId && bestIq > -Infinity,
-          speed: m.id === bestSpeedId && bestSpeed > -Infinity,
-          cost: m.id === bestCostId && bestCost < Infinity,
-          ttft: m.id === bestTtftId && bestTtft < Infinity,
-        };
-      }
-
-      return result;
+      return comparisonWinners(self.comparedModels, self.costBasis);
     },
 
     get estimatedRunCost(): string {
       const self = this as any;
       if (!self.inspectedModel) return '$0.00';
-      let inputP = self.inspectedModel.price1mInput ?? 0;
-      let outputP = self.inspectedModel.price1mOutput ?? 0;
-
-      if (self.usePromptCaching && self.inspectedModel.price1mCacheRead != null) {
-        inputP = self.inspectedModel.price1mCacheRead;
-      }
-      if (self.useBatchPricing && self.inspectedModel.price1mBatch != null) {
-        inputP = self.inspectedModel.price1mBatch;
-        outputP = outputP * 0.5;
-      }
-
       if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
         return '--';
       }
-      if (self.inspectedModel.price1mInput === 0 && self.inspectedModel.price1mOutput === 0) {
+      let inputP = self.inspectedModel.price1mInput;
+      let outputP = self.inspectedModel.price1mOutput;
+
+      if (self.usePromptCaching) {
+        inputP = cachedInput(self.inspectedModel);
+      }
+      if (self.useBatchPricing) {
+        inputP = batchInput(self.inspectedModel);
+        outputP = batchOutput(self.inspectedModel);
+      }
+
+      if (inputP === null && outputP === null) {
         return '--';
       }
 
-      const cost = (self.calcInputTokens / 1_000_000) * inputP + (self.calcOutputTokens / 1_000_000) * outputP;
-      if (cost === 0) return '--';
+      const inRate = inputP ?? outputP ?? 0;
+      const outRate = outputP ?? inputP ?? 0;
+
+      const cost = (self.calcInputTokens / 1_000_000) * inRate + (self.calcOutputTokens / 1_000_000) * outRate;
+      if (cost === 0) return '$0.00';
       if (cost < 0.0001) return '< $0.0001';
       return `$${cost.toFixed(4)}`;
     },
@@ -558,26 +545,29 @@ export function bench() {
     get estimatedMonthlyCost(): string {
       const self = this as any;
       if (!self.inspectedModel) return '$0.00';
-      let inputP = self.inspectedModel.price1mInput ?? 0;
-      let outputP = self.inspectedModel.price1mOutput ?? 0;
-
-      if (self.usePromptCaching && self.inspectedModel.price1mCacheRead != null) {
-        inputP = self.inspectedModel.price1mCacheRead;
-      }
-      if (self.useBatchPricing && self.inspectedModel.price1mBatch != null) {
-        inputP = self.inspectedModel.price1mBatch;
-        outputP = outputP * 0.5;
-      }
-
       if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
         return '--';
       }
-      if (self.inspectedModel.price1mInput === 0 && self.inspectedModel.price1mOutput === 0) {
+      let inputP = self.inspectedModel.price1mInput;
+      let outputP = self.inspectedModel.price1mOutput;
+
+      if (self.usePromptCaching) {
+        inputP = cachedInput(self.inspectedModel);
+      }
+      if (self.useBatchPricing) {
+        inputP = batchInput(self.inspectedModel);
+        outputP = batchOutput(self.inspectedModel);
+      }
+
+      if (inputP === null && outputP === null) {
         return '--';
       }
 
-      const perReq = (self.calcInputTokens / 1_000_000) * inputP + (self.calcOutputTokens / 1_000_000) * outputP;
-      if (perReq === 0) return '--';
+      const inRate = inputP ?? outputP ?? 0;
+      const outRate = outputP ?? inputP ?? 0;
+
+      const perReq = (self.calcInputTokens / 1_000_000) * inRate + (self.calcOutputTokens / 1_000_000) * outRate;
+      if (perReq === 0) return '$0.00';
       const monthly = perReq * self.dailyRequests * 30;
       return `$${monthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     },
@@ -638,8 +628,8 @@ export function bench() {
     },
 
     applyComparison(this: any) {
-      if (this.comparedModelIds.length === 0) {
-        this.toast('Select at least 1 model to compare');
+      if (this.comparedModelIds.length < 2) {
+        this.toast('Select at least 2 models to compare');
         return;
       }
       this.modelsViewMode = 'compare';
@@ -671,6 +661,7 @@ export function bench() {
 
     loadMoreModels(this: any) {
       this.modelsPageSize = Infinity;
+      this.cachedPaginatedModels = this.cachedModelRows.slice(0, this.modelsPageSize);
     },
 
     focusSearch() {

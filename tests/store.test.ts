@@ -1,6 +1,51 @@
 import { test, expect } from 'bun:test';
 import { bench } from '../src/store/appStore';
+import { calculateModelCost } from '../src/utils/pricing';
+import { comparisonWinners } from '../src/store/compare';
 import type { ModelRecord } from '../src/types/model';
+
+function pricedModel(overrides: Partial<ModelRecord> = {}): ModelRecord {
+  return {
+    id: 'test-model',
+    name: 'Test Model',
+    provider: 'Test Provider',
+    releasedAt: '2025-01-01',
+    price1mInput: 1.0,
+    price1mOutput: 2.0,
+    price1mCacheRead: null,
+    price1mBatch: null,
+    intelligence: 80,
+    codingIndex: 75,
+    mathIndex: 75,
+    reasoningIndex: 75,
+    speedTps: 100,
+    latencyTtft: 0.5,
+    contextWindow: 128000,
+    maxOutputTokens: 4096,
+    modalities: ['text'],
+    isOpenWeights: false,
+    ...overrides,
+  };
+}
+
+test('batch effective cost uses discounted input and output consistently', () => {
+  const model = pricedModel({ price1mInput: 2, price1mOutput: 10, price1mBatch: 1 });
+  expect(calculateModelCost(model, 'batch')).toBe(2);
+});
+
+test('comparison marks every tied model as a winner', () => {
+  const winners = comparisonWinners([pricedModel({ id: 'a' }), pricedModel({ id: 'b' })], 'blended');
+  expect(winners.a.iq).toBe(true);
+  expect(winners.b.iq).toBe(true);
+});
+
+test('comparison requires two selected models', () => {
+  const store = bench();
+  store.comparedModelIds = ['only'];
+  store.applyComparison();
+  expect(store.modelsViewMode).toBe('table');
+  expect(store.toastMsg).toContain('at least 2');
+});
 
 test('bench store initial state has default models, table view, empty comparedModelIds, and hidden VS column', () => {
   const store = bench();

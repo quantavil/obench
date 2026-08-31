@@ -141,9 +141,9 @@ import ModelDrawer from './ModelDrawer.astro';
 
         <button
           @click="applyComparison()"
-          :disabled="comparedModelIds.length < 1"
+          :disabled="comparedModelIds.length < 2"
           class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
-          :class="comparedModelIds.length >= 1 ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-98' : 'bg-[var(--chip-bg)] text-[var(--muted)] cursor-not-allowed opacity-60'"
+          :class="comparedModelIds.length >= 2 ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-98' : 'bg-[var(--chip-bg)] text-[var(--muted)] cursor-not-allowed opacity-60'"
         >
           <span>Apply & Compare</span>
           <template x-if="comparedModelIds.length > 0">
