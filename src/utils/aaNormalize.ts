@@ -61,10 +61,22 @@ export function normalizeAaRecords(allRecords: any[]): ModelRecord[] {
       : intelligence;
 
     // Speed (Tokens/sec) & Latency (Time-To-First-Token in seconds)
-    const rawTps = m.performance?.output_tokens_per_second ?? m.performance?.tps ?? m.speedTps;
+    // Real AA v2 API uses median_* fields; keep legacy fallbacks for bundled data/tests
+    const rawTps =
+      m.performance?.median_output_tokens_per_second ??
+      m.performance?.output_tokens_per_second ??
+      m.performance?.tps ??
+      m.median_output_tokens_per_second ??
+      m.speedTps;
     const speedTps = typeof rawTps === 'number' ? Math.round(rawTps * 10) / 10 : null;
 
-    const rawTtft = m.performance?.time_to_first_token_seconds ?? m.performance?.ttft ?? m.latencyTtft;
+    const rawTtft =
+      m.performance?.median_time_to_first_token_seconds ??
+      m.performance?.median_time_to_first_answer_token_seconds ??
+      m.performance?.time_to_first_token_seconds ??
+      m.performance?.ttft ??
+      m.median_time_to_first_token_seconds ??
+      m.latencyTtft;
     const latencyTtft = typeof rawTtft === 'number' ? Math.round(rawTtft * 100) / 100 : null;
 
     // Context window & limits
