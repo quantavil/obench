@@ -1,4 +1,6 @@
 import { afterEach, expect, test } from 'bun:test';
+import { EventEmitter } from 'node:events';
+import astroConfig from '../astro.config.mjs';
 import { app } from '../src/server/app';
 import { AA_MODELS_URL, MAX_RECORDS, MAX_SYNC_PAGES } from '../src/server/aaService';
 
@@ -33,6 +35,74 @@ function syncRequest(
     headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   }, env);
+}
+
+function devProxyRequest(
+  origin: string,
+  options: { forwardedProto?: string } = {},
+): Promise<Response> {
+  return new Promise((resolve, reject) => {
+    type DevProxyMiddleware = (
+      req: unknown,
+      res: unknown,
+      next: () => void,
+    ) => void | Promise<void>;
+    type DevProxyPlugin = {
+      name?: string;
+      configureServer?: (server: {
+        middlewares: { use(handler: DevProxyMiddleware): void };
+      }) => void;
+    };
+    const plugins = (astroConfig as unknown as { vite: { plugins: unknown[] } })
+      .vite.plugins.flat(Number.POSITIVE_INFINITY) as DevProxyPlugin[];
+    const proxyPlugin = plugins.find((plugin) => plugin?.name === 'aa-proxy');
+    let proxyMiddleware: DevProxyMiddleware | undefined;
+    proxyPlugin?.configureServer?.({
+      middlewares: {
+        use(handler) {
+          proxyMiddleware = handler;
+        },
+      },
+    });
+    if (!proxyMiddleware) {
+      reject(new Error('Development proxy middleware was not registered'));
+      return;
+    }
+
+    const req = Object.assign(new EventEmitter(), {
+      method: 'POST',
+      url: '/api/sync',
+      headers: {
+        host: '127.0.0.1:4322',
+        origin,
+        'content-type': 'application/json',
+        ...(options.forwardedProto ? { 'x-forwarded-proto': options.forwardedProto } : {}),
+      },
+      socket: { encrypted: false },
+      setEncoding() {},
+    });
+    const responseHeaders = new Headers();
+    const res = {
+      statusCode: 200,
+      setHeader(name: string, value: string | number | readonly string[]) {
+        responseHeaders.set(name, Array.isArray(value) ? value.join(', ') : String(value));
+      },
+      end(body?: Uint8Array | string) {
+        const responseBody = body instanceof Uint8Array ? new TextDecoder().decode(body) : body;
+        resolve(new Response(responseBody, { status: this.statusCode, headers: responseHeaders }));
+      },
+    };
+
+    const originalApiKey = process.env.AA_API_KEY;
+    process.env.AA_API_KEY = 'key';
+    void Promise.resolve(proxyMiddleware(req, res, () => reject(new Error('Proxy unexpectedly called next()'))))
+      .finally(() => {
+        if (originalApiKey === undefined) delete process.env.AA_API_KEY;
+        else process.env.AA_API_KEY = originalApiKey;
+      });
+    req.emit('data', '{}');
+    req.emit('end');
+  });
 }
 
 test('Hono API > GET /api/health returns ok status', async () => {
@@ -138,6 +208,25 @@ test('sync preserves same-origin browser requests', async () => {
 
   expect(response.status).toBe(200);
   expect(fetches).toBe(1);
+});
+
+test('development proxy preserves the request origin and still rejects cross-origin posts', async () => {
+  let fetches = 0;
+  stubFetch(async () => {
+    fetches += 1;
+    return Response.json({ data: [aaRecord(`dev-${fetches}`)] });
+  });
+
+  const localResponse = await devProxyRequest('http://127.0.0.1:4322');
+  const forwardedHttpsResponse = await devProxyRequest('https://127.0.0.1:4322', {
+    forwardedProto: 'https',
+  });
+  const hostileResponse = await devProxyRequest('https://evil.example');
+
+  expect(localResponse.status).toBe(200);
+  expect(forwardedHttpsResponse.status).toBe(200);
+  expect(hostileResponse.status).toBe(403);
+  expect(fetches).toBe(2);
 });
 
 test('sync rejects an off-origin next page without forwarding the API key', async () => {

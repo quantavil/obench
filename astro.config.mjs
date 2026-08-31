@@ -35,12 +35,29 @@ async function writeResponse(response, res) {
   res.end(Buffer.from(await response.arrayBuffer()));
 }
 
+function firstHeaderValue(value) {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return typeof raw === 'string' ? raw.split(',', 1)[0].trim() : '';
+}
+
+function proxyRequestUrl(req) {
+  const host = firstHeaderValue(req.headers.host) || 'localhost';
+  const forwardedProto = firstHeaderValue(req.headers['x-forwarded-proto']).toLowerCase();
+  const protocol = forwardedProto === 'http' || forwardedProto === 'https'
+    ? forwardedProto
+    : req.socket?.encrypted
+      ? 'https'
+      : 'http';
+  return new URL(req.url || '/', `${protocol}://${host}`);
+}
+
 function aaProxyPlugin() {
   return {
     name: 'aa-proxy',
     configureServer(server) {
       server.middlewares.use(async (req, res, next) => {
-        const pathname = new URL(req.url || '/', 'http://localhost').pathname;
+        const requestUrl = proxyRequestUrl(req);
+        const pathname = requestUrl.pathname;
         if (req.method !== 'POST' || (pathname !== '/api/test-aa' && pathname !== '/api/sync')) {
           next();
           return;
@@ -48,7 +65,7 @@ function aaProxyPlugin() {
 
         try {
           const body = await readBody(req);
-          const request = new Request(`http://localhost${pathname}`, {
+          const request = new Request(requestUrl, {
             method: req.method,
             headers: requestHeaders(req),
             body: body || undefined,
