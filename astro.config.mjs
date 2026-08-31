@@ -93,5 +93,13 @@ export default defineConfig({
   integrations: [alpinejs()],
   vite: {
     plugins: [tailwindcss(), aaProxyPlugin()],
+    optimizeDeps: {
+      include: [
+        'echarts/core',
+        'echarts/charts',
+        'echarts/components',
+        'echarts/renderers',
+      ],
+    },
   },
 });

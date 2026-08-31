@@ -1,11 +1,29 @@
-import * as echarts from 'echarts';
+import * as echarts from 'echarts/core';
+import { ScatterChart, LineChart } from 'echarts/charts';
+import {
+  GridComponent,
+  TooltipComponent,
+  DataZoomComponent,
+  AriaComponent,
+} from 'echarts/components';
+import { SVGRenderer } from 'echarts/renderers';
 import { providerColor } from '../utils/providers';
 import { computeEfficiencyFrontier, computeSotaProgression } from '../utils/frontier';
 import { calculateModelCost } from '../utils/pricing';
 import { fmtCost, fmt1 } from '../utils/formatters';
 import type { ModelRecord, CostBasis, PlotMetricMode } from '../types/model';
 
-let activeChartInstance: echarts.ECharts | null = null;
+echarts.use([
+  ScatterChart,
+  LineChart,
+  GridComponent,
+  TooltipComponent,
+  DataZoomComponent,
+  AriaComponent,
+  SVGRenderer,
+]);
+
+let activeChartInstance: echarts.EChartsType | null = null;
 
 export function destroyActiveChart(): void {
   if (activeChartInstance) {
@@ -41,8 +59,16 @@ export function renderEChartsPlot(
   costBasis: CostBasis = 'blended',
   metricMode: PlotMetricMode = 'iq-cost',
   isDark = true
-): echarts.ECharts | undefined {
-  if (!containerEl || containerEl.clientWidth === 0 || containerEl.clientHeight === 0) return;
+): echarts.EChartsType | undefined {
+  if (!containerEl) return;
+  if (containerEl.clientWidth === 0 || containerEl.clientHeight === 0) {
+    setTimeout(() => {
+      if (containerEl.clientWidth > 0 && containerEl.clientHeight > 0) {
+        renderEChartsPlot(containerEl, models, costBasis, metricMode, isDark);
+      }
+    }, 50);
+    return;
+  }
 
   const scored = (models || []).filter((m) => m && m.intelligence != null);
   if (!scored.length) {
@@ -381,8 +407,16 @@ export function renderEChartsTimeline(
   containerEl: HTMLElement | null,
   models: ModelRecord[],
   isDark = true
-): echarts.ECharts | undefined {
-  if (!containerEl || containerEl.clientWidth === 0 || containerEl.clientHeight === 0) return;
+): echarts.EChartsType | undefined {
+  if (!containerEl) return;
+  if (containerEl.clientWidth === 0 || containerEl.clientHeight === 0) {
+    setTimeout(() => {
+      if (containerEl.clientWidth > 0 && containerEl.clientHeight > 0) {
+        renderEChartsTimeline(containerEl, models, isDark);
+      }
+    }, 50);
+    return;
+  }
 
   const parsed = (models || [])
     .filter((m) => m && m.intelligence != null && m.releasedAt)

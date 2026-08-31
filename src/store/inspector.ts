@@ -14,6 +14,18 @@ export function focusableElements(dialog: HTMLElement): HTMLElement[] {
   );
 }
 
+export function focusFirstElement(container: HTMLElement): void {
+  if (!container) return;
+  const focusables = focusableElements(container);
+  if (focusables.length > 0) {
+    try {
+      focusables[0].focus();
+    } catch {
+      // Ignore focus errors
+    }
+  }
+}
+
 export function recordInspectorTrigger(trigger?: HTMLElement | null): void {
   if (trigger && typeof trigger.focus === 'function') {
     lastTriggerElement = trigger;

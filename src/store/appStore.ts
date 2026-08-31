@@ -10,12 +10,6 @@ import {
   WORKLOAD_PRESETS,
 } from '../utils/config';
 import {
-  renderEChartsPlot,
-  renderEChartsTimeline,
-  destroyActiveChart,
-  resizeActiveChart,
-} from '../charts/echartsRender';
-import {
   providerColor,
   providerSvg,
   extractModelBadges,
@@ -38,6 +32,7 @@ import {
   restoreInspectorFocus,
   reconcileInspectorScrollLock,
   trapFocus,
+  focusFirstElement,
 } from './inspector';
 import {
   fmt1,
@@ -50,6 +45,18 @@ import {
   fetchAaModels,
 } from '../utils/aaSync';
 import type { ModelRecord, CostBasis, ModelViewMode, PlotMetricMode } from '../types/model';
+
+let chartModulePromise: Promise<typeof import('../charts/echartsRender')> | null = null;
+
+function loadCharts() {
+  if (!chartModulePromise) {
+    chartModulePromise = import('../charts/echartsRender').catch((err) => {
+      chartModulePromise = null;
+      throw err;
+    });
+  }
+  return chartModulePromise;
+}
 
 export type ToastSeverity = 'info' | 'success' | 'warning' | 'error';
 
@@ -75,6 +82,9 @@ export function bench() {
     syncProgress: '',
     search: '',
     showAllProvidersModal: false,
+
+    // Theme state
+    isDark: true,
 
     // Models filter & sort state
     modelsViewMode: 'table' as ModelViewMode,
@@ -124,8 +134,10 @@ export function bench() {
       const savedTheme = localStorage.getItem('bench-theme');
       if (savedTheme === 'light') {
         document.documentElement.classList.remove('dark');
+        this.isDark = false;
       } else {
         document.documentElement.classList.add('dark');
+        this.isDark = true;
       }
 
       // Load saved models if present in localStorage
@@ -186,8 +198,9 @@ export function bench() {
         reconcileInspectorScrollLock(this.inspectedModel !== null);
         if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
           if (resizeTimer) clearTimeout(resizeTimer);
-          resizeTimer = setTimeout(() => {
-            resizeActiveChart();
+          resizeTimer = setTimeout(async () => {
+            const charts = await loadCharts();
+            charts.resizeActiveChart();
           }, 100);
         }
       });
@@ -414,17 +427,30 @@ export function bench() {
       }
     },
 
-    mountCurrentChart(this: any) {
-      const isDark = document.documentElement.classList.contains('dark');
+    async mountCurrentChart(this: any) {
       const chartEl = document.getElementById('echarts-container');
       if (!chartEl) return;
 
-      if (this.modelsViewMode === 'plot') {
-        renderEChartsPlot(chartEl, this.filteredModels, this.costBasis, this.plotMetric, isDark);
-      } else if (this.modelsViewMode === 'timeline') {
-        renderEChartsTimeline(chartEl, this.filteredModels, isDark);
+      if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
+        const isDark = document.documentElement.classList.contains('dark');
+        const charts = await loadCharts();
+        const render = () => {
+          if (this.modelsViewMode === 'plot') {
+            charts.renderEChartsPlot(chartEl, this.filteredModels, this.costBasis, this.plotMetric, isDark);
+          } else if (this.modelsViewMode === 'timeline') {
+            charts.renderEChartsTimeline(chartEl, this.filteredModels, isDark);
+          }
+        };
+        if (typeof window !== 'undefined' && window.requestAnimationFrame) {
+          window.requestAnimationFrame(() => render());
+        } else {
+          render();
+        }
       } else {
-        destroyActiveChart();
+        if (chartModulePromise) {
+          const charts = await loadCharts();
+          charts.destroyActiveChart();
+        }
       }
     },
 
@@ -627,6 +653,12 @@ export function bench() {
       recordInspectorTrigger(triggerEl);
       this.inspectedModel = model;
       reconcileInspectorScrollLock(true);
+      this.$nextTick(() => {
+        const dialog = document.querySelector("div[role='dialog']") as HTMLElement;
+        if (dialog) {
+          focusFirstElement(dialog);
+        }
+      });
     },
 
     closeModelDrawer(this: any) {
@@ -755,13 +787,13 @@ export function bench() {
     },
 
     toggleTheme(this: any) {
-      const isDark = document.documentElement.classList.toggle('dark');
+      this.isDark = document.documentElement.classList.toggle('dark');
       try {
-        localStorage.setItem('bench-theme', isDark ? 'dark' : 'light');
+        localStorage.setItem('bench-theme', this.isDark ? 'dark' : 'light');
       } catch {}
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) {
-        meta.setAttribute('content', isDark ? '#090d10' : '#f8fafc');
+        meta.setAttribute('content', this.isDark ? '#090d10' : '#f8fafc');
       }
       this.$nextTick(() => {
         this.mountCurrentChart();

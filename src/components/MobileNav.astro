@@ -6,7 +6,7 @@
       role="button"
       :aria-pressed="modelsViewMode === 'table'"
       aria-label="Table View"
-      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+      class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
       :class="modelsViewMode === 'table' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-list" /></svg>
@@ -18,7 +18,7 @@
       role="button"
       :aria-pressed="modelsViewMode === 'cards'"
       aria-label="Cards View"
-      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+      class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
       :class="modelsViewMode === 'cards' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-grid" /></svg>
@@ -30,7 +30,7 @@
       role="button"
       :aria-pressed="modelsViewMode === 'plot'"
       aria-label="Scatter Plots View"
-      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+      class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
       :class="modelsViewMode === 'plot' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-plot" /></svg>
@@ -42,7 +42,7 @@
       role="button"
       :aria-pressed="showCompareCol"
       aria-label="Toggle VS comparison column"
-      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer relative"
+      class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer relative"
       :class="showCompareCol ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-compare" /></svg>
