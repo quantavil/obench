@@ -277,7 +277,7 @@ export function bench() {
         if (hasPriceFilter) {
           const cost = calculateModelCost(m, this.costBasis);
           const inAnyRange = activeRanges.some((r: any) => {
-            if (r.id === 'free') return cost === 0 || cost === null;
+            if (r.id === 'free') return cost === 0;
             if (cost === null) return false;
             return cost >= r.min && cost <= r.max;
           });
@@ -534,19 +534,23 @@ export function bench() {
       let inputP = self.inspectedModel.price1mInput ?? 0;
       let outputP = self.inspectedModel.price1mOutput ?? 0;
 
-      if (self.usePromptCaching && self.inspectedModel.price1mCacheRead) {
+      if (self.usePromptCaching && self.inspectedModel.price1mCacheRead != null) {
         inputP = self.inspectedModel.price1mCacheRead;
       }
-      if (self.useBatchPricing && self.inspectedModel.price1mBatch) {
+      if (self.useBatchPricing && self.inspectedModel.price1mBatch != null) {
         inputP = self.inspectedModel.price1mBatch;
         outputP = outputP * 0.5;
       }
 
       if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
-        return 'Free / Open Weight';
+        return '--';
+      }
+      if (self.inspectedModel.price1mInput === 0 && self.inspectedModel.price1mOutput === 0) {
+        return '--';
       }
 
       const cost = (self.calcInputTokens / 1_000_000) * inputP + (self.calcOutputTokens / 1_000_000) * outputP;
+      if (cost === 0) return '--';
       if (cost < 0.0001) return '< $0.0001';
       return `$${cost.toFixed(4)}`;
     },
@@ -557,19 +561,23 @@ export function bench() {
       let inputP = self.inspectedModel.price1mInput ?? 0;
       let outputP = self.inspectedModel.price1mOutput ?? 0;
 
-      if (self.usePromptCaching && self.inspectedModel.price1mCacheRead) {
+      if (self.usePromptCaching && self.inspectedModel.price1mCacheRead != null) {
         inputP = self.inspectedModel.price1mCacheRead;
       }
-      if (self.useBatchPricing && self.inspectedModel.price1mBatch) {
+      if (self.useBatchPricing && self.inspectedModel.price1mBatch != null) {
         inputP = self.inspectedModel.price1mBatch;
         outputP = outputP * 0.5;
       }
 
       if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
-        return 'Free (Self-Hosted)';
+        return '--';
+      }
+      if (self.inspectedModel.price1mInput === 0 && self.inspectedModel.price1mOutput === 0) {
+        return '--';
       }
 
       const perReq = (self.calcInputTokens / 1_000_000) * inputP + (self.calcOutputTokens / 1_000_000) * outputP;
+      if (perReq === 0) return '--';
       const monthly = perReq * self.dailyRequests * 30;
       return `$${monthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     },

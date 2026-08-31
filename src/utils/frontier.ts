@@ -26,10 +26,12 @@ export function computeEfficiencyFrontier(models: ModelRecord[], costBasis: Cost
   const scored = (models || []).filter((m) => m && m.intelligence != null);
   if (!scored.length) return [];
 
-  const withCost = scored.map((m) => {
-    const costVal = calculateModelCost(m, costBasis);
-    return { ...m, cost: costVal ?? 0, unpriced: costVal == null };
-  });
+  const withCost = scored
+    .map((m) => {
+      const costVal = calculateModelCost(m, costBasis);
+      return { ...m, cost: costVal ?? 0, unpriced: costVal == null || costVal === 0 };
+    })
+    .filter((m) => !m.unpriced && m.cost > 0);
 
   // Sort cheapest first. If costs match, higher IQ first.
   const sorted = [...withCost].sort((a, b) => a.cost - b.cost || (b.intelligence ?? 0) - (a.intelligence ?? 0));

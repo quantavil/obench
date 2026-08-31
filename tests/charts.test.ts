@@ -20,10 +20,10 @@ describe('computeEfficiencyFrontier', () => {
       { id: 'm4', name: 'Model D', provider: 'Meta', intelligence: 82, price1mInput: null, price1mOutput: null } as ModelRecord,
     ];
     const frontier = computeEfficiencyFrontier(models, 'blended');
-    // D is unpriced (cost 0) with 82 IQ dominates A (80 IQ at $1.5), so frontier is D -> B
+    // D is unpriced (--, null cost) and must be excluded from frontier; frontier is A -> B
     expect(frontier.length).toBe(2);
-    expect(frontier.map((m) => m.name)).toEqual(['Model D', 'Model B']);
-    expect(frontier.map((m) => m.name)).not.toContain('Model A');
+    expect(frontier.map((m) => m.name)).toEqual(['Model A', 'Model B']);
+    expect(frontier.map((m) => m.name)).not.toContain('Model D');
     expect(frontier.map((m) => m.name)).not.toContain('Model C');
   });
 

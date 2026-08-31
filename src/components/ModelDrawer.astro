@@ -58,7 +58,7 @@
         <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
           <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5" x-text="`Cost (${costBasis})`"></span>
           <div class="flex items-baseline gap-1.5">
-            <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? (getModelCost(inspectedModel) === 0 ? 'Free' : fmtCost(getModelCost(inspectedModel))) : '--'"></span>
+            <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? (getModelCost(inspectedModel) === 0 ? '--' : fmtCost(getModelCost(inspectedModel))) : '--'"></span>
             <span class="text-xs font-mono text-[var(--muted)]" x-show="getModelCost(inspectedModel) !== null && getModelCost(inspectedModel) > 0">/ 1M</span>
           </div>
         </div>
@@ -130,28 +130,28 @@
             <span class="text-[var(--soft)] flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-rose-500"></span> Prompt Input
             </span>
-            <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mInput !== null ? (inspectedModel.price1mInput === 0 ? 'Free' : `$${inspectedModel.price1mInput} / 1M`) : 'Free / Open Weight'"></span>
+            <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mInput !== null ? (inspectedModel.price1mInput === 0 ? '--' : `$${inspectedModel.price1mInput} / 1M`) : '--'"></span>
           </div>
 
           <div class="flex items-center justify-between">
             <span class="text-[var(--soft)] flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Completion Output
             </span>
-            <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mOutput !== null ? (inspectedModel.price1mOutput === 0 ? 'Free' : `$${inspectedModel.price1mOutput} / 1M`) : 'Free / Open Weight'"></span>
+            <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mOutput !== null ? (inspectedModel.price1mOutput === 0 ? '--' : `$${inspectedModel.price1mOutput} / 1M`) : '--'"></span>
           </div>
 
           <div class="flex items-center justify-between">
             <span class="text-[var(--soft)] flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Cached Prompt Read
             </span>
-            <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="inspectedModel.price1mCacheRead !== null ? `$${inspectedModel.price1mCacheRead} / 1M` : '--'"></span>
+            <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="inspectedModel.price1mCacheRead !== null ? (inspectedModel.price1mCacheRead === 0 ? '--' : `$${inspectedModel.price1mCacheRead} / 1M`) : '--'"></span>
           </div>
 
           <div class="flex items-center justify-between">
             <span class="text-[var(--soft)] flex items-center gap-1.5">
               <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Batch API Rate
             </span>
-            <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mBatch !== null ? `$${inspectedModel.price1mBatch} / 1M` : '--'"></span>
+            <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mBatch !== null ? (inspectedModel.price1mBatch === 0 ? '--' : `$${inspectedModel.price1mBatch} / 1M`) : '--'"></span>
           </div>
 
           <template x-if="inspectedModel.releasedAt">
@@ -342,7 +342,7 @@
             <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
               <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5" x-text="`Cost (${costBasis})`"></span>
               <div class="flex items-baseline gap-1.5">
-                <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? (getModelCost(inspectedModel) === 0 ? 'Free' : fmtCost(getModelCost(inspectedModel))) : '--'"></span>
+                <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? (getModelCost(inspectedModel) === 0 ? '--' : fmtCost(getModelCost(inspectedModel))) : '--'"></span>
                 <span class="text-xs font-mono text-[var(--muted)]" x-show="getModelCost(inspectedModel) !== null && getModelCost(inspectedModel) > 0">/ 1M</span>
               </div>
             </div>
@@ -414,28 +414,28 @@
                 <span class="text-[var(--soft)] flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-rose-500"></span> Prompt Input
                 </span>
-                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mInput !== null ? (inspectedModel.price1mInput === 0 ? 'Free' : `$${inspectedModel.price1mInput} / 1M`) : 'Free / Open Weight'"></span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mInput !== null ? (inspectedModel.price1mInput === 0 ? '--' : `$${inspectedModel.price1mInput} / 1M`) : '--'"></span>
               </div>
 
               <div class="flex items-center justify-between">
                 <span class="text-[var(--soft)] flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-emerald-500"></span> Completion Output
                 </span>
-                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mOutput !== null ? (inspectedModel.price1mOutput === 0 ? 'Free' : `$${inspectedModel.price1mOutput} / 1M`) : 'Free / Open Weight'"></span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mOutput !== null ? (inspectedModel.price1mOutput === 0 ? '--' : `$${inspectedModel.price1mOutput} / 1M`) : '--'"></span>
               </div>
 
               <div class="flex items-center justify-between">
                 <span class="text-[var(--soft)] flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-cyan-500"></span> Cached Prompt Read
                 </span>
-                <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="inspectedModel.price1mCacheRead !== null ? `$${inspectedModel.price1mCacheRead} / 1M` : '--'"></span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="inspectedModel.price1mCacheRead !== null ? (inspectedModel.price1mCacheRead === 0 ? '--' : `$${inspectedModel.price1mCacheRead} / 1M`) : '--'"></span>
               </div>
 
               <div class="flex items-center justify-between">
                 <span class="text-[var(--soft)] flex items-center gap-1.5">
                   <span class="w-2 h-2 rounded-full bg-indigo-500"></span> Batch API Rate
                 </span>
-                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mBatch !== null ? `$${inspectedModel.price1mBatch} / 1M` : '--'"></span>
+                <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mBatch !== null ? (inspectedModel.price1mBatch === 0 ? '--' : `$${inspectedModel.price1mBatch} / 1M`) : '--'"></span>
               </div>
 
               <template x-if="inspectedModel.releasedAt">

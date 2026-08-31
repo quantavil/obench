@@ -2,7 +2,7 @@
 
 export function fmtCost(val: number | null | undefined): string {
   if (val === null || val === undefined) return '--';
-  if (val === 0) return 'Free';
+  if (val === 0) return '--';
   if (val < 0.01) return `$${val.toFixed(4)}`;
   if (val < 0.1) return `$${val.toFixed(3)}`;
   if (val < 1) return `$${val.toFixed(2)}`;

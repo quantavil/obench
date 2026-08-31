@@ -63,6 +63,9 @@ export function renderEChartsPlot(
     }));
 
     option = {
+      animation: false,
+      animationDuration: 0,
+      animationDurationUpdate: 0,
       backgroundColor: themeColors.bg,
       grid: { top: 36, right: 28, bottom: 60, left: 54, containLabel: true },
       tooltip: {
@@ -142,6 +145,9 @@ export function renderEChartsPlot(
     }));
 
     option = {
+      animation: false,
+      animationDuration: 0,
+      animationDurationUpdate: 0,
       backgroundColor: themeColors.bg,
       grid: { top: 36, right: 28, bottom: 60, left: 54, containLabel: true },
       tooltip: {
@@ -204,17 +210,27 @@ export function renderEChartsPlot(
     };
   } else {
     // ---------------------------------------------------- Default: IQ vs Cost ($)
-    const withCost = scored.map((m) => {
-      const costVal = calculateModelCost(m, costBasis);
-      return {
-        ...m,
-        cost: costVal && costVal > 0 ? costVal : 0.01,
-        realCost: costVal,
-        unpriced: costVal == null,
-      };
-    });
+    // Exclude -- models (null or 0 -> frontend shows --) from scatter/frontier
+    const withCost = scored
+      .map((m) => {
+        const costVal = calculateModelCost(m, costBasis);
+        return {
+          ...m,
+          cost: costVal ?? 0,
+          realCost: costVal,
+          unpriced: costVal == null || costVal === 0,
+        };
+      })
+      .filter((m) => m.realCost != null && m.realCost !== 0 && m.cost > 0);
 
-    const frontier = computeEfficiencyFrontier(models, costBasis);
+    // Frontier should also ignore -- models
+    const frontier = computeEfficiencyFrontier(
+      models.filter((m) => {
+        const c = calculateModelCost(m as any, costBasis);
+        return c != null && c !== 0;
+      }),
+      costBasis
+    );
     const frontierSet = new Set(frontier.map((m) => m.id));
 
     const scatterData = withCost.map((m) => ({
@@ -237,6 +253,9 @@ export function renderEChartsPlot(
     });
 
     option = {
+      animation: false,
+      animationDuration: 0,
+      animationDurationUpdate: 0,
       backgroundColor: themeColors.bg,
       grid: { top: 36, right: 28, bottom: 60, left: 54, containLabel: true },
       tooltip: {
@@ -249,9 +268,9 @@ export function renderEChartsPlot(
         formatter: (params: any) => {
           const m: any = params.data.model;
           if (!m) return '';
-          const costStr = m.realCost !== null ? (m.realCost === 0 ? 'Free' : `${fmtCost(m.realCost)}/1M`) : 'Free / Open Weight';
-          const inStr = m.price1mInput !== null ? (m.price1mInput === 0 ? 'Free' : `$${m.price1mInput}`) : '--';
-          const outStr = m.price1mOutput !== null ? (m.price1mOutput === 0 ? 'Free' : `$${m.price1mOutput}`) : '--';
+          const costStr = m.realCost !== null ? (m.realCost === 0 ? '--' : `${fmtCost(m.realCost)}/1M`) : '--';
+          const inStr = m.price1mInput !== null ? (m.price1mInput === 0 ? '--' : `$${m.price1mInput}`) : '--';
+          const outStr = m.price1mOutput !== null ? (m.price1mOutput === 0 ? '--' : `$${m.price1mOutput}`) : '--';
 
           return `
             <div style="padding: 12px 14px; min-width: 220px; font-family: 'Geist', system-ui, sans-serif;">
@@ -391,6 +410,9 @@ export function renderEChartsTimeline(
   activeChartInstance = chart;
 
   const option = {
+    animation: false,
+    animationDuration: 0,
+    animationDurationUpdate: 0,
     backgroundColor: themeColors.bg,
     grid: { top: 36, right: 28, bottom: 60, left: 54, containLabel: true },
     tooltip: {
