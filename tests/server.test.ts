@@ -1,5 +1,38 @@
-import { test, expect } from 'bun:test';
+import { afterEach, expect, test } from 'bun:test';
 import { app } from '../src/server/app';
+import { AA_MODELS_URL, MAX_SYNC_PAGES } from '../src/server/aaService';
+
+const originalFetch = globalThis.fetch;
+
+afterEach(() => {
+  globalThis.fetch = originalFetch;
+});
+
+function stubFetch(
+  handler: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>,
+) {
+  globalThis.fetch = Object.assign(handler, { preconnect: originalFetch.preconnect });
+}
+
+function aaRecord(id: string) {
+  return {
+    id,
+    name: `Model ${id}`,
+    provider: 'Test Provider',
+    intelligence: 80,
+  };
+}
+
+function syncRequest(
+  env: { AA_API_KEY?: string } = {},
+  body: Record<string, unknown> = {},
+) {
+  return app.request('/api/sync', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  }, env);
+}
 
 test('Hono API > GET /api/health returns ok status', async () => {
   const res = await app.request('/api/health');
@@ -31,13 +64,135 @@ test('Hono API > POST /api/test-aa returns 400 when AA_API_KEY is not configured
 });
 
 test('Hono API > POST /api/sync returns 400 when AA_API_KEY is not configured in Cloudflare', async () => {
-  const res = await app.request('/api/sync', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({}),
-  });
+  const res = await syncRequest();
   expect(res.status).toBe(400);
   const json = await res.json();
   expect(json.ok).toBe(false);
   expect(json.error).toContain('Cloudflare');
+});
+
+test('sync uses only the configured API key and ignores a body key', async () => {
+  const sentKeys: Array<string | null> = [];
+  stubFetch(async (_input, init) => {
+    sentKeys.push(new Headers(init?.headers).get('x-api-key'));
+    return Response.json({ data: [aaRecord('safe')] });
+  });
+
+  const response = await syncRequest({ AA_API_KEY: 'configured-key' }, { apiKey: 'body-key' });
+  const bodyOnlyResponse = await syncRequest({}, { apiKey: 'body-key' });
+
+  expect(response.status).toBe(200);
+  expect(bodyOnlyResponse.status).toBe(400);
+  expect(sentKeys).toEqual(['configured-key']);
+});
+
+test('sync rejects an off-origin next page without forwarding the API key', async () => {
+  const calls: Array<{ url: string; key: string | null }> = [];
+  stubFetch(async (input, init) => {
+    calls.push({ url: String(input), key: new Headers(init?.headers).get('x-api-key') });
+    return Response.json({
+      data: [aaRecord('safe')],
+      pagination: { next_page_url: 'https://attacker.example/steal' },
+    });
+  });
+
+  const response = await syncRequest({ AA_API_KEY: 'TOPSECRET' });
+  const json = await response.json();
+
+  expect(response.status).toBe(502);
+  expect(json).toMatchObject({ ok: false, code: 'INVALID_PAGINATION_URL' });
+  expect(calls).toEqual([{ url: AA_MODELS_URL, key: 'TOPSECRET' }]);
+  expect(JSON.stringify(json)).not.toContain('TOPSECRET');
+});
+
+test('sync detects pagination cycles explicitly', async () => {
+  let fetches = 0;
+  stubFetch(async () => {
+    fetches += 1;
+    return Response.json({
+      data: [aaRecord('loop')],
+      pagination: { next_page_url: AA_MODELS_URL },
+    });
+  });
+
+  const response = await syncRequest({ AA_API_KEY: 'key' });
+  const json = await response.json();
+
+  expect(response.status).toBe(502);
+  expect(json).toMatchObject({ ok: false, code: 'SYNC_INCOMPLETE' });
+  expect(json.error).toContain('cycle');
+  expect(fetches).toBe(1);
+});
+
+test('sync fails instead of returning success when the page budget is exhausted', async () => {
+  let fetches = 0;
+  stubFetch(async () => {
+    fetches += 1;
+    return Response.json({
+      data: [aaRecord(`page-${fetches}`)],
+      pagination: { next_page_url: `${AA_MODELS_URL}?page=${fetches + 1}` },
+    });
+  });
+
+  const response = await syncRequest({ AA_API_KEY: 'key' });
+  const json = await response.json();
+
+  expect(response.status).toBe(502);
+  expect(json).toMatchObject({ ok: false, code: 'SYNC_INCOMPLETE' });
+  expect(json.error).toContain('limit');
+  expect(fetches).toBe(MAX_SYNC_PAGES);
+});
+
+test('sync skips malformed records and reports complete synchronization metadata', async () => {
+  stubFetch(async () => Response.json({
+    data: [null, aaRecord('valid')],
+    pagination: { next_page_url: null },
+  }));
+
+  const response = await syncRequest({ AA_API_KEY: 'key' });
+  const json = await response.json();
+
+  expect(response.status).toBe(200);
+  expect(json).toMatchObject({
+    ok: true,
+    pagesFetched: 1,
+    totalRaw: 2,
+    skippedRecords: 1,
+    complete: true,
+  });
+  expect(json.models.map((model: { id: string }) => model.id)).toEqual(['valid']);
+});
+
+test('sync rejects an invalid upstream page shape with a structured error', async () => {
+  stubFetch(async () => Response.json({ data: { id: 'not-an-array' } }));
+
+  const response = await syncRequest({ AA_API_KEY: 'key' });
+  const json = await response.json();
+
+  expect(response.status).toBe(502);
+  expect(json).toMatchObject({ ok: false, code: 'INVALID_RESPONSE' });
+});
+
+test('sync preflight does not grant wildcard cross-origin access', async () => {
+  const response = await app.request('/api/sync', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://evil.example',
+      'Access-Control-Request-Method': 'POST',
+    },
+  });
+
+  expect(response.headers.get('access-control-allow-origin')).not.toBe('*');
+});
+
+test('test-aa preflight does not grant wildcard cross-origin access', async () => {
+  const response = await app.request('/api/test-aa', {
+    method: 'OPTIONS',
+    headers: {
+      Origin: 'https://evil.example',
+      'Access-Control-Request-Method': 'POST',
+    },
+  });
+
+  expect(response.headers.get('access-control-allow-origin')).not.toBe('*');
 });

@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { normalizeAaRecords, AA_MODELS_URL } from '../utils/aaNormalize';
+import { AA_MODELS_URL, SyncError, syncAaModels } from './aaService';
 import defaultModels from '../data/models.json';
 import type { ModelRecord } from '../types/model';
 
@@ -10,22 +10,28 @@ type Bindings = {
 
 export const app = new Hono<{ Bindings: Bindings }>().basePath('/api');
 
-// Global middleware
-app.use('*', cors());
+// Public read-only routes remain cross-origin readable. Mutation routes are
+// deliberately same-origin and receive no Access-Control-Allow-Origin header.
+app.use('/health', cors());
+app.use('/models', cors());
 
-// 1. Healthcheck & Cloudflare Config Status
+function getConfiguredApiKey(bindingKey?: string): string {
+  const processKey = typeof process !== 'undefined' ? process.env?.AA_API_KEY : undefined;
+  const configured = bindingKey || processKey;
+  return typeof configured === 'string' ? configured.trim() : '';
+}
+
 app.get('/health', (c) => {
-  const envKey = c.env?.AA_API_KEY || (typeof process !== 'undefined' ? process.env?.AA_API_KEY : undefined);
+  const envKey = getConfiguredApiKey(c.env?.AA_API_KEY);
   return c.json({
     status: 'ok',
     version: '1.0.0',
     service: 'OBench API (Hono + Cloudflare Pages)',
-    hasApiKeyConfigured: Boolean(envKey && envKey.trim().length > 0),
+    hasApiKeyConfigured: envKey.length > 0,
     timestamp: Date.now(),
   });
 });
 
-// 2. Direct Models Endpoint (Serves bundled dataset)
 app.get('/models', (c) => {
   return c.json({
     ok: true,
@@ -34,85 +40,83 @@ app.get('/models', (c) => {
   });
 });
 
-// 3. Test Artificial Analysis API Key (from Cloudflare env or optional body)
 app.post('/test-aa', async (c) => {
+  const body = await c.req.json().catch(() => ({})) as { apiKey?: unknown };
+  const envKey = getConfiguredApiKey(c.env?.AA_API_KEY);
+  const bodyKey = typeof body.apiKey === 'string' ? body.apiKey.trim() : '';
+  const apiKey = bodyKey || envKey;
+
+  if (!apiKey) {
+    return c.json({
+      ok: false,
+      code: 'CONFIGURATION_ERROR',
+      error: 'AA_API_KEY is not configured in Cloudflare environment variables.',
+    }, 400);
+  }
+
   try {
-    const body = await c.req.json().catch(() => ({}));
-    const envKey = c.env?.AA_API_KEY || (typeof process !== 'undefined' ? process.env?.AA_API_KEY : undefined);
-    const apiKey = (typeof body.apiKey === 'string' && body.apiKey.trim()) ? body.apiKey.trim() : (envKey || '').trim();
-
-    if (!apiKey) {
-      return c.json({ ok: false, error: 'AA_API_KEY is not configured in Cloudflare environment variables.' }, 400);
-    }
-
-    const res = await fetch(AA_MODELS_URL, {
+    const response = await fetch(AA_MODELS_URL, {
       headers: { 'x-api-key': apiKey },
     });
 
-    if (res.ok) {
+    if (response.ok) {
       return c.json({ ok: true, message: 'API key validated successfully with Artificial Analysis.' });
     }
 
-    if (res.status === 401 || res.status === 403) {
-      return c.json({ ok: false, error: 'Invalid API key or unauthorized.' }, 401);
+    if (response.status === 401 || response.status === 403) {
+      return c.json({
+        ok: false,
+        code: 'UPSTREAM_UNAUTHORIZED',
+        error: 'Invalid API key or unauthorized.',
+      }, 401);
     }
 
-    return c.json({ ok: false, error: `Artificial Analysis returned status ${res.status}` }, 400);
-  } catch (err: any) {
-    return c.json({ ok: false, error: `Connection failed: ${err.message}` }, 500);
+    return c.json({
+      ok: false,
+      code: 'UPSTREAM_ERROR',
+      error: `Artificial Analysis returned status ${response.status}.`,
+    }, 502);
+  } catch {
+    return c.json({
+      ok: false,
+      code: 'UPSTREAM_ERROR',
+      error: 'Unable to connect to Artificial Analysis.',
+    }, 502);
   }
 });
 
-// 4. Sync Models from Artificial Analysis using Cloudflare AA_API_KEY
 app.post('/sync', async (c) => {
+  // Normal synchronization trusts only server configuration, never request data.
+  const apiKey = getConfiguredApiKey(c.env?.AA_API_KEY);
+
+  if (!apiKey) {
+    return c.json({
+      ok: false,
+      code: 'CONFIGURATION_ERROR',
+      error: 'AA_API_KEY is not set in Cloudflare Pages environment variables. Please add AA_API_KEY in Cloudflare Pages Settings > Environment Variables.',
+    }, 400);
+  }
+
   try {
-    const body = await c.req.json().catch(() => ({}));
-    const envKey = c.env?.AA_API_KEY || (typeof process !== 'undefined' ? process.env?.AA_API_KEY : undefined);
-    const apiKey = (typeof body.apiKey === 'string' && body.apiKey.trim()) ? body.apiKey.trim() : (envKey || '').trim();
-
-    if (!apiKey) {
-      return c.json({
-        ok: false,
-        error: 'AA_API_KEY is not set in Cloudflare Pages environment variables. Please add AA_API_KEY in Cloudflare Pages Settings > Environment Variables.',
-      }, 400);
-    }
-
-    let allRecords: any[] = [];
-    let nextUrl: string | null = AA_MODELS_URL;
-    let pageCount = 0;
-
-    while (nextUrl && pageCount < 10) {
-      pageCount++;
-      const fetchRes: Response = await fetch(nextUrl, {
-        headers: { 'x-api-key': apiKey },
-      });
-
-      if (!fetchRes.ok) {
-        return c.json({ ok: false, error: `Artificial Analysis returned status ${fetchRes.status}` }, fetchRes.status as any);
-      }
-
-      const jsonData: any = await fetchRes.json();
-      const batch = Array.isArray(jsonData) ? jsonData : jsonData.data || [];
-      allRecords = allRecords.concat(batch);
-
-      if (jsonData.pagination && jsonData.pagination.next_page_url) {
-        nextUrl = jsonData.pagination.next_page_url;
-      } else if (jsonData.next_page_url) {
-        nextUrl = jsonData.next_page_url;
-      } else {
-        nextUrl = null;
-      }
-    }
-
-    const models = normalizeAaRecords(allRecords);
+    const result = await syncAaModels(apiKey);
     return c.json({
       ok: true,
-      models,
+      ...result,
       syncedAt: Date.now(),
-      totalRaw: allRecords.length,
-      pagesFetched: pageCount,
     });
-  } catch (err: any) {
-    return c.json({ ok: false, error: err.message || 'Internal server error' }, 500);
+  } catch (error) {
+    if (error instanceof SyncError) {
+      return c.json({
+        ok: false,
+        code: error.code,
+        error: error.message,
+      }, 502);
+    }
+
+    return c.json({
+      ok: false,
+      code: 'INTERNAL_ERROR',
+      error: 'Model synchronization failed.',
+    }, 500);
   }
 });
