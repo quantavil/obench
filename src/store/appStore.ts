@@ -678,21 +678,21 @@ export function bench() {
           const ta = document.createElement('textarea');
           ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
           document.body.appendChild(ta); ta.select();
-          try { document.execCommand('copy'); done(); } catch {}
+          try { document.execCommand('copy'); done(); } catch { }
           ta.remove();
         });
       } else {
         const ta = document.createElement('textarea');
         ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
         document.body.appendChild(ta); ta.select();
-        try { document.execCommand('copy'); done(); } catch {}
+        try { document.execCommand('copy'); done(); } catch { }
         ta.remove();
       }
     },
 
     toggleTheme(this: any) {
       const isDark = document.documentElement.classList.toggle('dark');
-      try { localStorage.setItem('bench-theme', isDark ? 'dark' : 'light'); } catch {}
+      try { localStorage.setItem('bench-theme', isDark ? 'dark' : 'light'); } catch { }
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) {
         meta.setAttribute('content', isDark ? '#09090b' : '#ffffff');
