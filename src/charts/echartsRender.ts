@@ -33,13 +33,13 @@ export function renderEChartsPlot(
 
   const themeColors = {
     bg: 'transparent',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    subText: isDark ? '#94a3b8' : '#64748b',
-    gridLine: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-    axisLine: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-    tooltipBg: isDark ? '#0d121f' : '#ffffff',
-    tooltipBorder: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)',
-    laserColor: isDark ? '#c6ff00' : '#65a30d',
+    text: isDark ? '#fafafa' : '#09090b',
+    subText: isDark ? '#a1a1aa' : '#71717a',
+    gridLine: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    axisLine: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+    tooltipBg: isDark ? '#141417' : '#ffffff',
+    tooltipBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
+    laserColor: isDark ? '#34d399' : '#059669',
   };
 
   const chart = echarts.init(containerEl, null, { renderer: 'svg' });
@@ -75,20 +75,20 @@ export function renderEChartsPlot(
         formatter: (params: any) => {
           const m: ModelRecord = params.data.model;
           return `
-            <div style="padding: 12px 14px; min-width: 220px; font-family: 'Manrope', system-ui, sans-serif;">
+            <div style="padding: 12px 14px; min-width: 220px; font-family: 'Geist', system-ui, sans-serif;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
-                <div style="font-weight: 800; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div style="font-weight: 700; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   ${m.name}
                 </div>
-                <span style="font-family: monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(198,255,0,0.15); color: ${isDark ? '#c6ff00' : '#4d7c0f'};">
+                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
                   ${m.intelligence} IQ
                 </span>
               </div>
-              <div style="font-size: 11px; font-family: monospace; color: ${themeColors.subText}; margin-bottom: 6px;">
+              <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText}; margin-bottom: 6px;">
                 ${m.provider} · Speed: <b style="color:${themeColors.text}">${m.speedTps} tok/s</b>
               </div>
-              <div style="font-size: 11px; font-family: monospace; color: ${themeColors.subText};">
-                TTFT Latency: ${m.latencyTtft ? `${m.latencyTtft}s` : '--'} · Context: ${m.contextWindow ? `${Math.round(m.contextWindow/1000)}k` : '--'}
+              <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText};">
+                TTFT: ${m.latencyTtft ? `${m.latencyTtft}s` : '--'} · Context: ${m.contextWindow ? `${Math.round(m.contextWindow/1000)}k` : '--'}
               </div>
             </div>
           `;
@@ -154,16 +154,16 @@ export function renderEChartsPlot(
         formatter: (params: any) => {
           const m: ModelRecord = params.data.model;
           return `
-            <div style="padding: 12px 14px; min-width: 220px; font-family: 'Manrope', system-ui, sans-serif;">
+            <div style="padding: 12px 14px; min-width: 220px; font-family: 'Geist', system-ui, sans-serif;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
-                <div style="font-weight: 800; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div style="font-weight: 700; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   ${m.name}
                 </div>
-                <span style="font-family: monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(198,255,0,0.15); color: ${isDark ? '#c6ff00' : '#4d7c0f'};">
+                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
                   ${m.intelligence} IQ
                 </span>
               </div>
-              <div style="font-size: 11px; font-family: monospace; color: ${themeColors.subText};">
+              <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText};">
                 TTFT: <b>${m.latencyTtft}s</b> · Speed: <b>${m.speedTps} tok/s</b>
               </div>
             </div>
@@ -172,7 +172,7 @@ export function renderEChartsPlot(
       },
       xAxis: {
         type: 'value',
-        name: 'Time to First Token / Latency (seconds, lower is better)',
+        name: 'Time to First Token (seconds, lower is better)',
         nameLocation: 'middle',
         nameGap: 34,
         nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
@@ -224,10 +224,10 @@ export function renderEChartsPlot(
       isFrontier: frontierSet.has(m.id),
       itemStyle: {
         color: providerColor(m.provider),
-        borderColor: frontierSet.has(m.id) ? (isDark ? '#c6ff00' : '#84cc16') : 'rgba(0,0,0,0.2)',
+        borderColor: frontierSet.has(m.id) ? (isDark ? '#34d399' : '#059669') : 'rgba(0,0,0,0.15)',
         borderWidth: frontierSet.has(m.id) ? 2 : 1,
         shadowBlur: frontierSet.has(m.id) ? 8 : 2,
-        shadowColor: frontierSet.has(m.id) ? 'rgba(198, 255, 0, 0.6)' : 'rgba(0,0,0,0.3)',
+        shadowColor: frontierSet.has(m.id) ? (isDark ? 'rgba(52, 211, 153, 0.4)' : 'rgba(16, 185, 129, 0.3)') : 'rgba(0,0,0,0.15)',
       },
     }));
 
@@ -249,28 +249,28 @@ export function renderEChartsPlot(
         formatter: (params: any) => {
           const m: any = params.data.model;
           if (!m) return '';
-          const costStr = m.realCost !== null ? `${fmtCost(m.realCost)}/1M` : 'Free / Open Weight';
-          const inStr = m.price1mInput !== null ? `$${m.price1mInput}` : '--';
-          const outStr = m.price1mOutput !== null ? `$${m.price1mOutput}` : '--';
+          const costStr = m.realCost !== null ? (m.realCost === 0 ? 'Free' : `${fmtCost(m.realCost)}/1M`) : 'Free / Open Weight';
+          const inStr = m.price1mInput !== null ? (m.price1mInput === 0 ? 'Free' : `$${m.price1mInput}`) : '--';
+          const outStr = m.price1mOutput !== null ? (m.price1mOutput === 0 ? 'Free' : `$${m.price1mOutput}`) : '--';
 
           return `
-            <div style="padding: 12px 14px; min-width: 220px; font-family: 'Manrope', system-ui, sans-serif;">
+            <div style="padding: 12px 14px; min-width: 220px; font-family: 'Geist', system-ui, sans-serif;">
               <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
-                <div style="font-weight: 800; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+                <div style="font-weight: 700; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                   ${m.name}
                 </div>
-                <span style="font-family: monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(198,255,0,0.15); color: ${isDark ? '#c6ff00' : '#4d7c0f'};">
+                <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
                   ${m.intelligence} IQ
                 </span>
               </div>
-              <div style="font-size: 11px; font-family: monospace; color: ${themeColors.subText}; margin-bottom: 8px;">
+              <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText}; margin-bottom: 8px;">
                 ${m.provider} · Speed: ${m.speedTps ? `${m.speedTps} tps` : '--'}
               </div>
-              <div style="padding-top: 8px; border-top: 1px solid ${themeColors.gridLine}; display: flex; justify-content: space-between; font-size: 11px; font-family: monospace;">
-                <span style="color: ${themeColors.subText};">Blended Rate</span>
+              <div style="padding-top: 8px; border-top: 1px solid ${themeColors.gridLine}; display: flex; justify-content: space-between; font-size: 11px; font-family: 'JetBrains Mono', monospace;">
+                <span style="color: ${themeColors.subText};">Effective Rate</span>
                 <span style="font-weight: 700; color: ${themeColors.text};">${costStr}</span>
               </div>
-              <div style="margin-top: 4px; display: flex; justify-content: space-between; font-size: 10px; font-family: monospace; color: ${themeColors.subText};">
+              <div style="margin-top: 4px; display: flex; justify-content: space-between; font-size: 10px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText};">
                 <span>In: ${inStr} / 1M</span>
                 <span>Out: ${outStr} / 1M</span>
               </div>
@@ -314,7 +314,7 @@ export function renderEChartsPlot(
             color: themeColors.laserColor,
             width: 2.2,
             type: 'dashed',
-            shadowColor: isDark ? 'rgba(198, 255, 0, 0.5)' : 'rgba(101, 163, 13, 0.4)',
+            shadowColor: isDark ? 'rgba(52, 211, 153, 0.4)' : 'rgba(16, 185, 129, 0.3)',
             shadowBlur: 6,
           },
           z: 2,
@@ -367,10 +367,10 @@ export function renderEChartsTimeline(
     isSota: sotaSet.has(m.id),
     itemStyle: {
       color: providerColor(m.provider),
-      borderColor: sotaSet.has(m.id) ? (isDark ? '#c6ff00' : '#84cc16') : 'rgba(0,0,0,0.2)',
+      borderColor: sotaSet.has(m.id) ? (isDark ? '#34d399' : '#059669') : 'rgba(0,0,0,0.15)',
       borderWidth: sotaSet.has(m.id) ? 2 : 1,
       shadowBlur: sotaSet.has(m.id) ? 8 : 2,
-      shadowColor: sotaSet.has(m.id) ? 'rgba(198, 255, 0, 0.6)' : 'rgba(0,0,0,0.3)',
+      shadowColor: sotaSet.has(m.id) ? (isDark ? 'rgba(52, 211, 153, 0.4)' : 'rgba(16, 185, 129, 0.3)') : 'rgba(0,0,0,0.15)',
     },
   }));
 
@@ -378,13 +378,13 @@ export function renderEChartsTimeline(
 
   const themeColors = {
     bg: 'transparent',
-    text: isDark ? '#f8fafc' : '#0f172a',
-    subText: isDark ? '#94a3b8' : '#64748b',
-    gridLine: isDark ? 'rgba(255, 255, 255, 0.06)' : 'rgba(0, 0, 0, 0.06)',
-    axisLine: isDark ? 'rgba(255, 255, 255, 0.12)' : 'rgba(0, 0, 0, 0.12)',
-    tooltipBg: isDark ? '#0d121f' : '#ffffff',
-    tooltipBorder: isDark ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.12)',
-    laserColor: isDark ? '#c6ff00' : '#65a30d',
+    text: isDark ? '#fafafa' : '#09090b',
+    subText: isDark ? '#a1a1aa' : '#71717a',
+    gridLine: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)',
+    axisLine: isDark ? 'rgba(255,255,255,0.10)' : 'rgba(0,0,0,0.08)',
+    tooltipBg: isDark ? '#141417' : '#ffffff',
+    tooltipBorder: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.10)',
+    laserColor: isDark ? '#34d399' : '#059669',
   };
 
   const chart = echarts.init(containerEl, null, { renderer: 'svg' });
@@ -404,16 +404,16 @@ export function renderEChartsTimeline(
         const m: ModelRecord = params.data.model;
         if (!m) return '';
         return `
-          <div style="padding: 12px 14px; min-width: 220px; font-family: 'Manrope', system-ui, sans-serif;">
+          <div style="padding: 12px 14px; min-width: 220px; font-family: 'Geist', system-ui, sans-serif;">
             <div style="display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 6px;">
-              <div style="font-weight: 800; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
+              <div style="font-weight: 700; font-size: 13px; color: ${themeColors.text}; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
                 ${m.name}
               </div>
-              <span style="font-family: monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 4px; background: rgba(198,255,0,0.15); color: ${isDark ? '#c6ff00' : '#4d7c0f'};">
+              <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
                 ${m.intelligence} IQ
               </span>
             </div>
-            <div style="font-size: 11px; font-family: monospace; color: ${themeColors.subText};">
+            <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText};">
               ${m.provider} · Released ${m.releasedAt}
             </div>
           </div>
@@ -453,7 +453,7 @@ export function renderEChartsTimeline(
           color: themeColors.laserColor,
           width: 2.2,
           type: 'dashed',
-          shadowColor: isDark ? 'rgba(198, 255, 0, 0.5)' : 'rgba(101, 163, 13, 0.4)',
+          shadowColor: isDark ? 'rgba(52, 211, 153, 0.4)' : 'rgba(16, 185, 129, 0.3)',
           shadowBlur: 6,
         },
         z: 2,

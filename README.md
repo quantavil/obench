@@ -24,8 +24,7 @@ Built with TypeScript, Astro, Hono, Tailwind CSS v4, Alpine.js, and Apache EChar
 .
 ├── src/
 │   ├── charts/
-│   │   ├── echartsRender.ts    # Apache ECharts scatter plot & SOTA timeline renderers
-│   │   └── svgCharts.ts        # Standalone SVG chart math & helpers
+│   │   └── echartsRender.ts    # Apache ECharts scatter plot & SOTA timeline renderers
 │   ├── components/
 │   │   ├── Header.astro        # Top navigation bar with ⌘K search & live sync trigger
 │   │   ├── TabModels.astro     # Explorer views (Table, Cards, Scatter Plots, Timeline, Compare)

@@ -6,8 +6,16 @@ export function calculateModelCost(m: ModelRecord | null | undefined, costBasis:
   const out = m.price1mOutput;
   if (costBasis === 'input') return inp;
   if (costBasis === 'output') return out;
-  if (costBasis === 'cached') return m.price1mCacheRead ?? (inp != null ? inp * 0.25 : null);
-  if (costBasis === 'batch') return m.price1mBatch ?? (inp != null ? (3 * inp * 0.5 + (out ?? inp) * 0.5) / 4 : null);
+  if (costBasis === 'cached') {
+    if (m.price1mCacheRead != null) return m.price1mCacheRead;
+    return inp != null ? Math.round(inp * 0.25 * 100) / 100 : null;
+  }
+  if (costBasis === 'batch') {
+    if (m.price1mBatch != null) return m.price1mBatch;
+    // Batch API is documented as 50% discount on blended rate
+    const blended = inp == null && out == null ? null : (3 * (inp ?? out ?? 0) + (out ?? inp ?? 0)) / 4;
+    return blended != null ? Math.round(blended * 0.5 * 100) / 100 : null;
+  }
   if (inp == null && out == null) return null;
   const i = inp ?? out ?? 0;
   const o = out ?? inp ?? 0;

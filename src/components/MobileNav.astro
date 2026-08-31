@@ -1,49 +1,36 @@
-<!-- MOBILE BOTTOM NAVIGATION (OPENROUTER PRO ERGONOMICS) -->
-<div class="sm:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] max-w-md">
-  <div class="glass rounded-xl p-1.5 flex items-center justify-between shadow-2xl border border-[var(--glass-brd)] bg-[var(--glass-bg-hi)] backdrop-blur-lg mb-[env(safe-area-inset-bottom)]">
-    
-    <!-- Table View -->
+<!-- Mobile bottom nav — OpenRouter floating pill -->
+<nav class="sm:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] max-w-sm" aria-label="Mobile Navigation">
+  <div class="glass rounded-full p-1 flex items-center justify-between shadow-xl border border-[var(--glass-brd)] bg-[var(--glass-bg)] backdrop-blur-xl mb-[env(safe-area-inset-bottom)]">
     <button @click="modelsViewMode = 'table'"
-      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'table' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <use href="#icon-list" />
-      </svg>
+      aria-label="Table View"
+      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'table' ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-list" /></svg>
       <span>Table</span>
     </button>
-
-    <!-- Cards View -->
     <button @click="modelsViewMode = 'cards'"
-      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'cards' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <use href="#icon-grid" />
-      </svg>
+      aria-label="Cards View"
+      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'cards' ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-grid" /></svg>
       <span>Cards</span>
     </button>
-
-    <!-- Plot View -->
     <button @click="modelsViewMode = 'plot'"
-      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'plot' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <use href="#icon-plot" />
-      </svg>
+      aria-label="Scatter Plots View"
+      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'plot' ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-plot" /></svg>
       <span>Plot</span>
     </button>
-
-    <!-- Compare View -->
     <button @click="modelsViewMode = 'compare'"
-      class="px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'compare' ? 'bg-emerald-600 text-white dark:bg-[#c6ff00] dark:text-black font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-        <use href="#icon-compare" />
-      </svg>
+      aria-label="Compare View"
+      class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer relative"
+      :class="modelsViewMode === 'compare' ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'">
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-compare" /></svg>
       <span>VS</span>
       <template x-if="comparedModelIds.length > 0">
-        <span class="px-1 rounded bg-black/20 font-mono text-[9px]" x-text="comparedModelIds.length"></span>
+        <span class="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-emerald-600 text-white font-mono text-[9px] flex items-center justify-center font-bold" x-text="comparedModelIds.length"></span>
       </template>
     </button>
-
   </div>
-</div>
+</nav>

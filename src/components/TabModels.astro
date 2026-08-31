@@ -1,81 +1,80 @@
 <!-- PRO AI MODEL EXPLORER WORKBENCH (OPENROUTER ERGONOMICS & FULL AA DATA SUITE) -->
 <section class="space-y-4 pt-2">
 
-  <!-- Dynamic Creator Filter Chips Bar with SVG Logos -->
-  <div class="flex items-center justify-between gap-3 border-b border-[var(--hair)] pb-3">
-    <div class="flex items-center gap-1.5 overflow-x-auto scroll-slim py-0.5 min-w-0">
+  <!-- Creator Filter Chips — OpenRouter pill style -->
+  <div class="flex items-center justify-between gap-3 border-b border-[var(--hair)] pb-3 -mx-1 px-1">
+    <div class="flex items-center gap-1.5 overflow-x-auto scroll-slim py-0.5 min-w-0" role="toolbar" aria-label="Filter by provider">
       <button
         @click="selectedModelProviders = []"
-        class="shrink-0 px-3 py-1.5 rounded-lg text-xs font-semibold cursor-pointer transition-all duration-150"
-        :class="selectedModelProviders.length === 0 ? 'bg-lime-500/20 border-lime-600/40 text-lime-900 dark:bg-lime-500/15 dark:border-lime-500/40 dark:text-[#c6ff00] font-bold border' : 'chip hover:text-[var(--strong)]'"
+        class="shrink-0 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border"
+        :class="selectedModelProviders.length === 0 ? 'chip-active' : 'chip'"
       >
-        All Creators (<span x-text="data.models.length"></span>)
+        All <span class="opacity-60" x-text="`· ${data.models.length}`"></span>
       </button>
 
       <template x-for="p in availableModelProviders" :key="p">
         <button
           @click="toggleProvider(p)"
-          class="shrink-0 px-2.5 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all duration-150 flex items-center gap-1.5"
-          :class="isProviderSelected(p) ? 'bg-lime-500/15 border-lime-500/40 text-lime-800 dark:text-[#c6ff00] font-bold border' : 'chip hover:text-[var(--strong)]'"
+          class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5 border"
+          :class="isProviderSelected(p) ? 'chip-active' : 'chip'"
         >
-          <span class="w-3.5 h-3.5 flex items-center justify-center shrink-0" :style="`color: ${providerColor(p)}`" x-html="providerSvg(p, 13)"></span>
+          <span class="w-3.5 h-3.5 flex items-center justify-center shrink-0 rounded" :style="`color: ${providerColor(p)}`" x-html="providerSvg(p, 13)"></span>
           <span x-text="p"></span>
         </button>
       </template>
     </div>
 
-    <!-- Live Filter Count -->
-    <div class="shrink-0 text-xs font-mono text-[var(--soft)] hidden md:block">
-      <span class="font-bold text-[var(--strong)]" x-text="filteredModels.length"></span> / <span x-text="data.models.length"></span> models
+    <div class="shrink-0 text-xs font-mono text-[var(--muted)] hidden md:flex items-center gap-1.5">
+      <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+      <span class="font-semibold text-[var(--strong)]" x-text="filteredModels.length"></span>
+      <span>of</span>
+      <span x-text="data.models.length"></span>
     </div>
   </div>
 
-  <!-- Primary Control Strip: View Mode + Sort + Filters + Basis -->
-  <div class="flex flex-wrap items-center justify-between gap-2.5">
-    
-    <!-- Left: View Mode Toggle -->
-    <div class="seg inline-flex rounded-lg p-1 bg-[var(--chip-bg)] border border-[var(--glass-brd)] max-w-full overflow-x-auto scroll-slim">
+  <!-- Control Strip — view toggle + filters, OpenRouter toolbar -->
+  <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+    <div class="seg inline-flex rounded-[10px] p-0.5 max-w-full overflow-x-auto scroll-slim shrink-0" role="tablist" aria-label="View Modes">
       <template x-for="m in MODEL_VIEW_MODES" :key="m.id">
         <button
           @click="modelsViewMode = m.id"
-          class="seg-btn px-2.5 sm:px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
-          :class="modelsViewMode === m.id ? 'seg-btn-on text-[var(--strong)]' : 'text-[var(--soft)] hover:text-[var(--strong)]'"
+          role="tab"
+          :aria-selected="modelsViewMode === m.id"
+          class="seg-btn px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
+          :class="modelsViewMode === m.id ? 'seg-btn-on' : ''"
           :title="m.label"
           :aria-label="m.label"
         >
-          <svg class="w-3.5 h-3.5 opacity-70 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <svg class="w-3.5 h-3.5 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
             <use :href="`#${m.icon}`" />
           </svg>
           <span x-text="m.label"></span>
           <template x-if="m.id === 'compare' && comparedModelIds.length > 0">
-            <span class="ml-0.5 px-1.5 py-0.2 rounded-full bg-emerald-100 text-emerald-800 dark:bg-lime-500/30 dark:text-[#c6ff00] font-mono text-[10px]" x-text="comparedModelIds.length"></span>
+            <span class="ml-0.5 min-w-4 h-4 px-1 rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black font-mono text-[10px] flex items-center justify-center font-bold" x-text="comparedModelIds.length"></span>
           </template>
         </button>
       </template>
     </div>
 
-    <!-- Right: Sort & Filter Controls -->
-    <div class="flex flex-wrap items-center gap-2">
-      
-      <!-- Capability Filter Dropdown -->
-      <div class="flex items-center">
-        <select
-          x-model="selectedCapability"
-          class="field-select h-8 px-2.5 text-xs font-sans rounded-lg cursor-pointer"
-          title="Capability Filter"
-        >
-          <template x-for="cap in CAPABILITY_FILTERS" :key="cap.id">
-            <option :value="cap.id" x-text="cap.label" :selected="selectedCapability === cap.id"></option>
-          </template>
-        </select>
-      </div>
+    <div class="flex flex-wrap items-center gap-1.5">
+      <!-- Capability Filter -->
+      <select
+        x-model="selectedCapability"
+        class="field-select h-8 px-2.5 cursor-pointer"
+        title="Filter by capability"
+        aria-label="Filter by capability"
+      >
+        <template x-for="cap in CAPABILITY_FILTERS" :key="cap.id">
+          <option :value="cap.id" x-text="cap.label" :selected="selectedCapability === cap.id"></option>
+        </template>
+      </select>
 
-      <!-- Price Range Filter Dropdown -->
+      <!-- Price Ranges Dropdown -->
       <details class="multi-dd" @click.outside="$el.open = false">
         <summary class="h-8">
-          <span class="font-bold text-emerald-700 dark:text-[#c6ff00] font-mono">$</span>
-          <span class="truncate font-medium" x-text="selectedPriceRanges.length === 0 ? 'All Pricing' : selectedPriceRanges.length === 1 ? PRICE_RANGES.find(r => r.id === selectedPriceRanges[0]).label : `${selectedPriceRanges.length} Ranges`"></span>
-          <svg class="w-3 h-3 text-[var(--soft)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          <span class="font-mono text-xs font-semibold">$</span>
+          <span class="truncate text-xs" x-text="selectedPriceRanges.length === 0 ? 'All pricing' : selectedPriceRanges.length === 1 ? PRICE_RANGES.find(r => r.id === selectedPriceRanges[0]).label : `${selectedPriceRanges.length} price filters`"></span>
+          <svg class="w-3 h-3 text-[var(--muted)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
         </summary>
         <div class="multi-dd-panel scroll-slim">
           <template x-for="r in PRICE_RANGES" :key="r.id">
@@ -87,125 +86,141 @@
         </div>
       </details>
 
-      <!-- Sort Dropdown -->
-      <div class="flex items-center">
-        <select
-          x-model="sortBy"
-          class="field-select h-8 px-2.5 text-xs font-sans rounded-lg cursor-pointer"
-          title="Sort Models"
-        >
-          <template x-for="opt in SORT_OPTIONS" :key="opt.id">
-            <option :value="opt.id" x-text="opt.label" :selected="sortBy === opt.id"></option>
-          </template>
-        </select>
-      </div>
+      <!-- Sort Selector -->
+      <select x-model="sortBy" class="field-select h-8 px-2.5 cursor-pointer" title="Sort order" aria-label="Sort order">
+        <template x-for="opt in SORT_OPTIONS" :key="opt.id">
+          <option :value="opt.id" x-text="opt.label" :selected="sortBy === opt.id"></option>
+        </template>
+      </select>
 
-      <!-- Cost Basis Dropdown -->
-      <div class="flex items-center">
-        <select
-          x-model="costBasis"
-          class="field-select h-8 px-2.5 text-xs font-sans rounded-lg cursor-pointer"
-          title="Cost Calculation Basis"
-        >
-          <template x-for="b in COST_BASIS_OPTIONS" :key="b.id">
-            <option :value="b.id" x-text="b.label" :selected="costBasis === b.id"></option>
-          </template>
-        </select>
-      </div>
+      <!-- Cost Basis Selector -->
+      <select x-model="costBasis" class="field-select h-8 px-2.5 cursor-pointer" title="Cost basis rate" aria-label="Cost basis rate">
+        <template x-for="b in COST_BASIS_OPTIONS" :key="b.id">
+          <option :value="b.id" x-text="b.label" :selected="costBasis === b.id"></option>
+        </template>
+      </select>
 
-      <!-- Custom Min/Max Inputs if Custom Checked -->
+      <!-- Custom Price Min/Max Inputs -->
       <template x-if="selectedPriceRanges.includes('custom')">
-        <div class="flex items-center gap-1 text-xs font-mono text-[var(--soft)]">
-          <input type="number" step="0.01" min="0" placeholder="Min" x-model="customMinPrice"
-            class="w-14 h-8 px-2 text-xs font-sans rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] focus:outline-none focus:border-emerald-600 dark:focus:border-[#c6ff00]" />
-          <span>–</span>
-          <input type="number" step="0.01" min="0" placeholder="Max" x-model="customMaxPrice"
-            class="w-14 h-8 px-2 text-xs font-sans rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] focus:outline-none focus:border-emerald-600 dark:focus:border-[#c6ff00]" />
+        <div class="flex items-center gap-1 text-xs">
+          <input type="number" step="0.01" min="0" placeholder="Min $" x-model="customMinPrice" class="w-16 h-8 px-2 text-xs rounded-[8px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] focus:outline-none focus:border-[var(--strong)] font-mono" />
+          <span class="text-[var(--muted)]">—</span>
+          <input type="number" step="0.01" min="0" placeholder="Max $" x-model="customMaxPrice" class="w-16 h-8 px-2 text-xs rounded-[8px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] focus:outline-none focus:border-[var(--strong)] font-mono" />
         </div>
       </template>
 
-      <!-- Reset Filters Button -->
+      <!-- Clear Active Filters -->
       <template x-if="selectedModelProviders.length > 0 || selectedPriceRanges.length > 0 || selectedCapability !== 'all' || search">
-        <button
-          @click="clearFilters()"
-          class="h-8 px-2 text-xs text-emerald-700 dark:text-[#c6ff00] hover:underline font-bold cursor-pointer"
-        >
-          Clear
-        </button>
+        <button @click="clearFilters()" class="h-8 px-2.5 text-xs font-semibold text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer transition-colors">Clear</button>
       </template>
-
     </div>
-
   </div>
 
-  <!-- Best Model in Range Highlight Banner -->
+  <!-- Best in filter Highlight Banner -->
   <template x-if="bestModelInRange && (selectedPriceRanges.length > 0 || selectedModelProviders.length > 0 || selectedCapability !== 'all' || search)">
-    <div class="p-3 rounded-xl bg-emerald-50 border border-emerald-200 dark:bg-lime-500/10 dark:border-[#c6ff00]/30 flex flex-wrap items-center justify-between gap-3 text-xs">
+    <div class="p-3 rounded-[10px] bg-[var(--panel)] border border-[var(--glass-brd)] flex flex-wrap items-center justify-between gap-3 text-xs border-l-2 border-l-[var(--strong)] shadow-xs">
       <div class="flex items-center gap-2.5 min-w-0">
-        <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-lime-500/20 dark:text-[#c6ff00] font-bold font-mono text-[11px] shrink-0">
-          🏆 Top IQ in Filter
-        </span>
+        <span class="px-2 py-0.5 rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black font-mono text-[11px] font-bold shrink-0">Top Quality</span>
         <span class="font-bold text-[var(--strong)] truncate text-sm" x-text="bestModelInRange.name"></span>
-        <span class="text-[var(--soft)] font-mono text-[11px]" x-text="`(${bestModelInRange.provider})`"></span>
+        <span class="text-[var(--muted)] font-mono text-xs" x-text="bestModelInRange.provider"></span>
       </div>
-      <div class="flex items-center gap-3 shrink-0 font-mono text-[11px]">
-        <span class="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 dark:bg-lime-500/20 dark:text-[#c6ff00] font-bold" x-text="`${bestModelInRange.intelligence} IQ`"></span>
+      <div class="flex items-center gap-2.5 shrink-0 font-mono text-xs">
+        <span class="px-2.5 py-0.5 rounded-full iq-badge text-xs" x-text="`${bestModelInRange.intelligence} IQ`"></span>
         <template x-if="bestModelInRange.speedTps">
-          <span class="text-[var(--soft)]" x-text="`⚡ ${bestModelInRange.speedTps} tok/s`"></span>
+          <span class="text-[var(--soft)] font-semibold" x-text="`${bestModelInRange.speedTps} tps`"></span>
         </template>
         <template x-if="getModelCost(bestModelInRange) !== null">
-          <span class="text-[var(--soft)]" x-text="`${fmtCost(getModelCost(bestModelInRange))}/1M (${costBasis})`"></span>
+          <span class="text-[var(--soft)] font-bold" x-text="getModelCost(bestModelInRange) === 0 ? 'Free' : `${fmtCost(getModelCost(bestModelInRange))}/1M`"></span>
         </template>
-        <button @click="openModelDrawer(bestModelInRange)" class="text-emerald-700 dark:text-[#c6ff00] underline font-bold cursor-pointer">
-          Inspect ↗
-        </button>
+        <button @click="openModelDrawer(bestModelInRange)" class="ml-1 px-3 py-1 rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black text-xs font-semibold cursor-pointer hover:opacity-90 shadow-2xs">Inspect →</button>
       </div>
     </div>
   </template>
 
   <!-- ========================================================================= -->
-  <!-- VIEW 1: HIGH-DENSITY PRO TABLE (FULL AA TELEMETRY)                        -->
+  <!-- VIEW 1: HIGH-DENSITY PRO TABLE (FULL AA TELEMETRY & SORTABLE HEADERS)     -->
   <!-- ========================================================================= -->
   <div x-show="modelsViewMode === 'table'">
     <template x-if="rankedModelsByIntelligence.length === 0">
       <div class="glass-soft rounded-xl p-12 text-center border border-[var(--glass-brd)]">
-        <p class="text-sm text-[var(--soft)]">No models match your search or active filters.</p>
-        <button @click="clearFilters()" class="btn btn-secondary px-4 py-2 text-xs mt-3">
+        <p class="text-sm text-[var(--soft)] font-medium">No models match your search or active filters.</p>
+        <button @click="clearFilters()" class="btn btn-secondary px-4 py-2 text-xs mt-3 cursor-pointer">
           Clear all filters
         </button>
       </div>
     </template>
 
     <template x-if="rankedModelsByIntelligence.length > 0">
-      <div class="rounded-xl border border-[var(--glass-brd)] bg-[var(--panel)] overflow-hidden shadow-sm">
+      <div class="rounded-[12px] border border-[var(--glass-brd)] bg-[var(--panel)] overflow-hidden shadow-xs">
         <div class="overflow-x-auto scroll-slim">
           <table class="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr class="border-b border-[var(--hair)] bg-[var(--chip-bg)] text-[var(--soft)] font-mono text-[11px]">
-                <th class="py-3 px-3 w-10 text-center">VS</th>
+            <thead class="sticky top-0 z-10">
+              <tr class="border-b border-[var(--hair)] bg-[var(--panel-muted)]/90 backdrop-blur-md text-[var(--muted)] font-medium text-[11px] tracking-wide">
+                <th class="py-3 px-3 w-10 text-center" title="Compare side-by-side">VS</th>
                 <th class="py-3 px-3 w-10 text-center">#</th>
-                <th class="py-3 px-4 font-semibold">Model Name & Capabilities</th>
-                <th class="py-3 px-3 font-semibold text-center w-24">Quality (IQ)</th>
-                <th class="py-3 px-3 font-semibold text-center w-20 hidden sm:table-cell">Coding</th>
-                <th class="py-3 px-3 font-semibold text-center w-24 hidden lg:table-cell">Speed (TPS)</th>
-                <th class="py-3 px-3 font-semibold text-center w-20 hidden xl:table-cell">Context</th>
-                <th class="py-3 px-3 font-semibold text-right w-24">Prompt / 1M</th>
-                <th class="py-3 px-3 font-semibold text-right w-24">Output / 1M</th>
-                <th class="py-3 px-3 font-semibold text-right w-24">Blended</th>
+                <th class="py-3 px-4 font-semibold sortable-th" @click="toggleSort('name')" title="Click to sort by Name">
+                  <div class="flex items-center gap-1">
+                    <span>Model Name & Capabilities</span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('name')"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 font-semibold text-center w-24 sortable-th" @click="toggleSort('iq')" title="Click to sort by Intelligence IQ">
+                  <div class="flex items-center justify-center gap-1">
+                    <span>Quality (IQ)</span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('iq')"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 font-semibold text-center w-20 hidden sm:table-cell sortable-th" @click="toggleSort('coding')" title="Click to sort by Coding Index">
+                  <div class="flex items-center justify-center gap-1">
+                    <span>Coding</span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('coding')"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 font-semibold text-center w-24 hidden lg:table-cell sortable-th" @click="toggleSort('speed')" title="Click to sort by Speed TPS">
+                  <div class="flex items-center justify-center gap-1">
+                    <span>Speed (TPS)</span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('speed')"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 font-semibold text-center w-20 hidden xl:table-cell sortable-th" @click="toggleSort('context')" title="Click to sort by Context Window">
+                  <div class="flex items-center justify-center gap-1">
+                    <span>Context</span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('context')"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 font-semibold text-right w-24 sortable-th" @click="toggleSort('prompt')" title="Click to sort by Prompt price">
+                  <div class="flex items-center justify-end gap-1">
+                    <span>Prompt / 1M</span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('prompt')"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 font-semibold text-right w-24 sortable-th" @click="toggleSort('output')" title="Click to sort by Output price">
+                  <div class="flex items-center justify-end gap-1">
+                    <span>Output / 1M</span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('output')"></span>
+                  </div>
+                </th>
+                <th class="py-3 px-3 font-semibold text-right w-24 sortable-th" @click="toggleSort('blended')" title="Click to sort by Blended price">
+                  <div class="flex items-center justify-end gap-1">
+                    <span x-text="`Cost (${costBasis})`"></span>
+                    <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('blended')"></span>
+                  </div>
+                </th>
                 <th class="py-3 px-3 w-12 text-center"></th>
               </tr>
             </thead>
             <tbody class="divide-y divide-[var(--hair)]">
               <template x-for="(row, idx) in paginatedModels" :key="row.model.id">
-                <tr class="pro-table-row group transition-colors hover:bg-[var(--chip-hover)]">
+                <tr class="pro-table-row group">
                   <!-- Compare Checkbox -->
                   <td class="py-3 px-3 text-center" @click.stop>
                     <input
                       type="checkbox"
                       :checked="isModelCompared(row.model)"
                       @change="toggleCompareModel(row.model)"
-                      class="rounded accent-lime-500 cursor-pointer w-3.5 h-3.5"
+                      class="rounded-[4px] border-[var(--field-border)] accent-zinc-900 dark:accent-white cursor-pointer w-3.5 h-3.5"
                       :title="isModelCompared(row.model) ? 'Remove from comparison' : 'Add to side-by-side compare'"
+                      :aria-label="`Compare ${row.model.name}`"
                     />
                   </td>
 
@@ -217,13 +232,13 @@
                     <div class="flex items-center gap-3">
                       <!-- Brand SVG Icon -->
                       <div
-                        class="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-xs"
+                        class="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
                         :style="`color: ${providerColor(row.model.provider)}`"
                         x-html="providerSvg(row.model.provider, 15)"
                       ></div>
                       <div class="min-w-0">
                         <div class="flex items-center gap-1.5 flex-wrap">
-                          <span class="font-extrabold text-[var(--strong)] text-sm group-hover:text-emerald-700 dark:group-hover:text-[#c6ff00] transition-colors" x-text="row.model.name"></span>
+                          <span class="font-semibold text-[var(--strong)] text-[13px] tracking-tight group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors" x-text="row.model.name"></span>
                           
                           <!-- Dynamic Capabilities Tags -->
                           <template x-for="b in extractModelBadges(row.model)" :key="b.label">
@@ -234,7 +249,7 @@
                             ></span>
                           </template>
                           <template x-if="row.model.isOpenWeights">
-                            <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">Open Weights</span>
+                            <span class="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">Open</span>
                           </template>
                         </div>
 
@@ -244,8 +259,9 @@
                           <span class="text-[var(--muted)] truncate max-w-[150px] sm:max-w-xs" x-text="row.model.id"></span>
                           <button
                             @click.stop="copyToClipboard(row.model.id, row.model.id)"
-                            class="text-[var(--soft)] hover:text-[var(--strong)] p-0.5 rounded cursor-pointer"
+                            class="text-[var(--soft)] hover:text-[var(--strong)] p-0.5 rounded cursor-pointer transition-colors"
                             title="Copy Model ID"
+                            aria-label="Copy Model ID"
                           >
                             <template x-if="copiedModelId === row.model.id">
                               <span class="text-emerald-500 font-bold">✓</span>
@@ -264,8 +280,8 @@
                   <!-- IQ Score -->
                   <td class="py-3 px-3 text-center font-mono">
                     <span
-                      class="font-black text-xs px-2 py-0.5 rounded-md iq-badge tabular"
-                      x-text="row.model.intelligence !== null ? `${row.model.intelligence} IQ` : '--'"
+                      class="font-semibold text-xs px-2.5 py-0.5 rounded-full iq-badge tabular"
+                      x-text="row.model.intelligence !== null ? row.model.intelligence : '--'"
                     ></span>
                   </td>
 
@@ -290,22 +306,22 @@
                   </td>
 
                   <!-- Input Price -->
-                  <td class="py-3 px-3 text-right font-mono text-[var(--strong)]">
+                  <td class="py-3 px-3 text-right font-mono">
                     <template x-if="row.model.price1mInput !== null">
-                      <span class="font-semibold tabular" :class="row.model.price1mInput === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-800 dark:text-rose-400'" x-text="row.model.price1mInput === 0 ? 'Free' : `$${row.model.price1mInput}`"></span>
+                      <span class="font-medium tabular text-[var(--soft)]" x-text="row.model.price1mInput === 0 ? 'Free' : `$${row.model.price1mInput}`"></span>
                     </template>
                     <template x-if="row.model.price1mInput === null">
-                      <span class="text-[var(--muted)]">--</span>
+                      <span class="text-[var(--muted)]">—</span>
                     </template>
                   </td>
 
                   <!-- Output Price -->
-                  <td class="py-3 px-3 text-right font-mono text-[var(--strong)]">
+                  <td class="py-3 px-3 text-right font-mono">
                     <template x-if="row.model.price1mOutput !== null">
-                      <span class="font-semibold tabular text-emerald-800 dark:text-emerald-400" x-text="row.model.price1mOutput === 0 ? 'Free' : `$${row.model.price1mOutput}`"></span>
+                      <span class="font-medium tabular text-[var(--soft)]" x-text="row.model.price1mOutput === 0 ? 'Free' : `$${row.model.price1mOutput}`"></span>
                     </template>
                     <template x-if="row.model.price1mOutput === null">
-                      <span class="text-[var(--muted)]">--</span>
+                      <span class="text-[var(--muted)]">—</span>
                     </template>
                   </td>
 
@@ -325,6 +341,7 @@
                       @click="openModelDrawer(row.model)"
                       class="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--soft)] group-hover:text-[var(--strong)] group-hover:bg-[var(--chip-bg)] transition-colors cursor-pointer"
                       title="Inspect Model Details"
+                      aria-label="Inspect Model"
                     >
                       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
@@ -340,7 +357,7 @@
         <!-- Single Load More Button After 100 Models -->
         <template x-if="paginatedModels.length < rankedModelsByIntelligence.length">
           <div class="flex justify-center p-4 border-t border-[var(--hair)] bg-[var(--chip-bg)]">
-            <button @click="loadMoreModels()" class="btn btn-secondary px-6 py-2.5 text-xs font-bold cursor-pointer">
+            <button @click="loadMoreModels()" class="btn btn-secondary px-6 py-2.5 text-xs font-bold cursor-pointer shadow-2xs">
               Load All Remaining (<span x-text="rankedModelsByIntelligence.length - paginatedModels.length"></span> models)
             </button>
           </div>
@@ -363,23 +380,23 @@
             <div class="flex items-start justify-between gap-2 mb-2.5">
               <div class="flex items-center gap-2 min-w-0">
                 <div
-                  class="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-xs"
+                  class="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
                   :style="`color: ${providerColor(row.model.provider)}`"
                   x-html="providerSvg(row.model.provider, 15)"
                 ></div>
                 <div class="min-w-0">
-                  <span class="text-[11px] font-mono text-[var(--soft)] truncate block" x-text="row.model.provider"></span>
+                  <span class="text-[11px] font-mono text-[var(--soft)] truncate block font-medium" x-text="row.model.provider"></span>
                 </div>
               </div>
 
               <span
-                class="font-black text-xs px-2 py-0.5 rounded-md iq-badge tabular font-mono"
+                class="font-bold text-xs px-2.5 py-0.5 rounded-full iq-badge tabular font-mono"
                 x-show="row.model.intelligence !== null"
                 x-text="`${row.model.intelligence} IQ`"
               ></span>
             </div>
 
-            <h4 class="font-extrabold text-[var(--strong)] text-sm sm:text-base truncate group-hover:text-emerald-700 dark:group-hover:text-[#c6ff00] transition-colors" x-text="row.model.name"></h4>
+            <h4 class="font-bold text-[var(--strong)] text-sm sm:text-base truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors" x-text="row.model.name"></h4>
 
             <!-- Badges & Speed -->
             <div class="flex items-center gap-1.5 mt-2 flex-wrap text-[10px] font-mono">
@@ -398,15 +415,15 @@
           <div class="pt-3 border-t border-[var(--hair)] flex items-center justify-between text-xs font-mono">
             <div class="flex items-center gap-2">
               <template x-if="row.model.price1mInput !== null">
-                <span class="text-rose-800 dark:text-rose-400 font-semibold" x-text="`In $${row.model.price1mInput}`"></span>
+                <span class="text-rose-700 dark:text-rose-400 font-medium" x-text="`In $${row.model.price1mInput}`"></span>
               </template>
               <template x-if="row.model.price1mOutput !== null">
-                <span class="text-emerald-800 dark:text-emerald-400 font-semibold" x-text="`Out $${row.model.price1mOutput}`"></span>
+                <span class="text-emerald-700 dark:text-emerald-400 font-medium" x-text="`Out $${row.model.price1mOutput}`"></span>
               </template>
             </div>
 
             <div class="text-right">
-              <span class="font-bold text-[var(--strong)]" x-text="getModelCost(row.model) !== null ? `${fmtCost(getModelCost(row.model))}/1M` : 'Unpriced'"></span>
+              <span class="font-bold text-[var(--strong)]" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : `${fmtCost(getModelCost(row.model))}/1M`) : 'Unpriced'"></span>
             </div>
           </div>
         </div>
@@ -416,7 +433,7 @@
     <!-- Single Load More Button After 100 Models -->
     <template x-if="paginatedModels.length < rankedModelsByIntelligence.length">
       <div class="flex justify-center pt-5">
-        <button @click="loadMoreModels()" class="btn btn-secondary px-6 py-2.5 text-xs font-bold cursor-pointer">
+        <button @click="loadMoreModels()" class="btn btn-secondary px-6 py-2.5 text-xs font-bold cursor-pointer shadow-2xs">
           Load All Remaining (<span x-text="rankedModelsByIntelligence.length - paginatedModels.length"></span> models)
         </button>
       </div>
@@ -427,12 +444,12 @@
   <!-- VIEW 3 & 4: APACHE ECHARTS MULTI-METRIC SCATTER PLOTS & TIMELINE          -->
   <!-- ========================================================================= -->
   <div x-show="modelsViewMode === 'plot' || modelsViewMode === 'timeline'" class="space-y-4">
-    <div class="glass-soft rounded-xl p-4 sm:p-6 border border-[var(--glass-brd)] overflow-hidden">
+    <div class="glass-soft rounded-xl p-4 sm:p-6 border border-[var(--glass-brd)] overflow-hidden shadow-xs">
       <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--hair)] mb-3">
         
         <!-- Plot Sub-Metric Switcher (When on Plot Mode) -->
         <template x-if="modelsViewMode === 'plot'">
-          <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]">
+          <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]" role="toolbar">
             <template x-for="pMode in PLOT_METRIC_MODES" :key="pMode.id">
               <button
                 @click="plotMetric = pMode.id"
@@ -446,14 +463,14 @@
 
         <template x-if="modelsViewMode === 'timeline'">
           <div class="flex items-center gap-2">
-            <span class="px-2 py-0.5 rounded-md iq-badge font-mono text-[11px] font-bold">
+            <span class="px-2.5 py-0.5 rounded-full iq-badge font-mono text-[11px] font-bold">
               SOTA Progression Staircase
             </span>
           </div>
         </template>
 
         <div class="flex items-center gap-3 text-xs font-mono text-[var(--soft)]">
-          <span class="hidden sm:inline">Use scrollwheel or pinch to zoom</span>
+          <span class="hidden sm:inline text-[var(--muted)]">Scrollwheel / pinch to zoom</span>
           <span class="font-bold text-[var(--strong)]" x-text="`${filteredModels.length} plotted`"></span>
         </div>
       </div>
@@ -464,13 +481,13 @@
 
     <!-- Optimal SOTA / Frontier Models Grid -->
     <template x-if="optimalModels.length > 0">
-      <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-4">
+      <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-4 shadow-xs">
         <div class="flex items-center justify-between border-b border-[var(--hair)] pb-3">
           <div class="flex items-center gap-2">
-            <span class="px-2.5 py-1 rounded-md iq-badge font-mono font-bold text-xs">
-              <span x-text="modelsViewMode === 'plot' ? '⚡ Efficiency Frontier' : '🌟 SOTA Record Milestones'"></span>
+            <span class="px-2.5 py-0.5 rounded-full iq-badge font-mono font-bold text-xs">
+              <span x-text="modelsViewMode === 'plot' ? '⚡ Efficiency Frontier' : '🌟 SOTA Milestones'"></span>
             </span>
-            <h3 class="text-sm font-bold text-[var(--strong)]" x-text="modelsViewMode === 'plot' ? 'Pareto-Optimal Models (Highest IQ per Dollar)' : 'Chronological SOTA Record Milestones'"></h3>
+            <h3 class="text-sm font-bold text-[var(--strong)]" x-text="modelsViewMode === 'plot' ? 'Pareto-Optimal Models (Highest IQ per Dollar)' : 'Chronological SOTA Record Leaps'"></h3>
           </div>
           <span class="text-xs font-mono text-[var(--soft)]" x-text="`${optimalModels.length} models`"></span>
         </div>
@@ -479,20 +496,20 @@
           <template x-for="(m, idx) in optimalModels" :key="m.id">
             <div
               @click="openModelDrawer(m)"
-              class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] hover:border-emerald-500/40 dark:hover:border-[#c6ff00]/40 transition-colors flex flex-col justify-between gap-2.5 cursor-pointer group"
+              class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] hover:border-emerald-500/40 transition-colors flex flex-col justify-between gap-2.5 cursor-pointer group shadow-2xs"
             >
               <div>
                 <div class="flex items-center justify-between gap-2 mb-1">
-                  <span class="text-[11px] font-mono font-black text-emerald-700 dark:text-[#c6ff00]" x-text="`#${idx + 1} Optimal`"></span>
-                  <span class="text-xs font-bold px-2 py-0.5 rounded-md iq-badge font-mono" x-text="`${m.intelligence} IQ`"></span>
+                  <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400" x-text="`#${idx + 1} Optimal`"></span>
+                  <span class="text-xs font-bold px-2 py-0.5 rounded-full iq-badge font-mono" x-text="`${m.intelligence} IQ`"></span>
                 </div>
-                <h4 class="font-bold text-[var(--strong)] text-sm truncate group-hover:text-emerald-700 dark:group-hover:text-[#c6ff00] transition-colors" x-text="m.name"></h4>
+                <h4 class="font-bold text-[var(--strong)] text-sm truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors" x-text="m.name"></h4>
                 <p class="text-xs text-[var(--soft)] font-mono" x-text="m.provider"></p>
               </div>
 
               <div class="flex items-center justify-between pt-2 border-t border-[var(--hair)] text-xs font-mono">
                 <template x-if="modelsViewMode === 'plot'">
-                  <span class="text-[var(--strong)] font-semibold" x-text="`${fmtCost(getModelCost(m))}/1M`"></span>
+                  <span class="text-[var(--strong)] font-semibold" x-text="getModelCost(m) === 0 ? 'Free' : `${fmtCost(getModelCost(m))}/1M`"></span>
                 </template>
                 <template x-if="modelsViewMode === 'timeline'">
                   <span class="text-[var(--soft)]" x-text="m.releasedAt"></span>
@@ -509,19 +526,19 @@
   </div>
 
   <!-- ========================================================================= -->
-  <!-- VIEW 5: FULL-SPECTRUM MODEL COMPARISON (SIDE-BY-SIDE)                     -->
+  <!-- VIEW 5: FULL-SPECTRUM MODEL COMPARISON (SIDE-BY-SIDE WITH WINNER HIGHLIGHTS) -->
   <!-- ========================================================================= -->
   <div x-show="modelsViewMode === 'compare'" class="space-y-4">
-    <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-5">
+    <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-5 shadow-xs">
       <div class="flex items-center justify-between border-b border-[var(--hair)] pb-4">
         <div>
-          <h3 class="text-base font-extrabold text-[var(--strong)] flex items-center gap-2">
-            <svg class="w-4 h-4 text-emerald-700 dark:text-[#c6ff00]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+          <h3 class="text-base font-bold text-[var(--strong)] flex items-center gap-2">
+            <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
               <use href="#icon-compare" />
             </svg>
             Side-by-Side Model Benchmark & Cost Delta
           </h3>
-          <p class="text-xs text-[var(--soft)] mt-0.5">Select up to 4 models from the table or chips below to evaluate speed, intelligence & cost trade-offs</p>
+          <p class="text-xs text-[var(--soft)] mt-0.5">Select up to 4 models from the chips below or table to evaluate speed, intelligence & pricing trade-offs</p>
         </div>
 
         <template x-if="comparedModelIds.length > 0">
@@ -535,11 +552,11 @@
       <div class="space-y-2">
         <label class="text-[11px] font-mono text-[var(--soft)] uppercase tracking-wider font-bold">Quick Select Models to Compare</label>
         <div class="flex items-center gap-1.5 overflow-x-auto scroll-slim py-1">
-          <template x-for="m in data.models.slice(0, 15)" :key="m.id">
+          <template x-for="m in data.models.slice(0, 16)" :key="m.id">
             <button
               @click="toggleCompareModel(m)"
               class="shrink-0 px-2.5 py-1 rounded-lg text-xs font-mono cursor-pointer transition-all flex items-center gap-1.5"
-              :class="isModelCompared(m) ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-lime-500/20 dark:text-[#c6ff00] dark:border-lime-500/40 font-bold' : 'chip hover:text-[var(--strong)]'"
+              :class="isModelCompared(m) ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 dark:bg-emerald-950/50 dark:text-emerald-300 dark:border-emerald-700/50 font-bold shadow-2xs' : 'chip hover:text-[var(--strong)]'"
             >
               <span class="w-3 h-3 flex items-center justify-center shrink-0" :style="`color: ${providerColor(m.provider)}`" x-html="providerSvg(m.provider, 12)"></span>
               <span class="truncate max-w-[140px]" x-text="m.name"></span>
@@ -550,42 +567,52 @@
 
       <template x-if="comparedModels.length === 0">
         <div class="p-12 text-center border border-dashed border-[var(--glass-brd)] rounded-xl">
-          <p class="text-sm text-[var(--soft)]">No models selected for comparison.</p>
+          <p class="text-sm text-[var(--soft)] font-medium">No models selected for comparison.</p>
           <p class="text-xs text-[var(--muted)] mt-1">Check the "VS" box next to any model in the Table or click the chips above.</p>
         </div>
       </template>
 
-      <!-- Multi-column comparison cards -->
+      <!-- Multi-column comparison cards with winner highlights -->
       <template x-if="comparedModels.length > 0">
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
           <template x-for="m in comparedModels" :key="m.id">
-            <div class="model-card p-4 flex flex-col justify-between gap-4 relative border-emerald-500/20 dark:border-lime-500/30">
+            <div class="model-card p-4 flex flex-col justify-between gap-4 relative border-[var(--glass-brd)]">
               <div>
                 <div class="flex items-start justify-between gap-2 mb-2">
                   <div class="flex items-center gap-2">
                     <div
-                      class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-xs"
+                      class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
                       :style="`color: ${providerColor(m.provider)}`"
                       x-html="providerSvg(m.provider, 16)"
                     ></div>
                     <div>
-                      <span class="text-[11px] font-mono text-[var(--soft)] block" x-text="m.provider"></span>
+                      <span class="text-[11px] font-mono text-[var(--soft)] block font-medium" x-text="m.provider"></span>
                     </div>
                   </div>
-                  <button @click="toggleCompareModel(m)" class="text-[var(--muted)] hover:text-rose-500 text-xs font-bold p-1 cursor-pointer" title="Remove">✕</button>
+                  <button @click="toggleCompareModel(m)" class="text-[var(--muted)] hover:text-rose-500 text-xs font-bold p-1 cursor-pointer transition-colors" title="Remove" aria-label="Remove model">✕</button>
                 </div>
 
-                <h4 class="font-extrabold text-sm text-[var(--strong)]" x-text="m.name"></h4>
+                <h4 class="font-bold text-sm text-[var(--strong)]" x-text="m.name"></h4>
                 <p class="text-[10px] font-mono text-[var(--muted)] truncate mt-0.5" x-text="m.id"></p>
 
-                <!-- Spec Grid -->
+                <!-- Spec Grid with Winner Badges -->
                 <div class="grid grid-cols-2 gap-2 mt-4">
-                  <div class="p-2.5 rounded-lg bg-[var(--chip-bg)]">
-                    <span class="text-[10px] font-mono text-[var(--soft)] block">Quality (IQ)</span>
-                    <span class="text-lg font-black font-mono text-emerald-700 dark:text-[#c6ff00]" x-text="`${m.intelligence ?? '--'} IQ`"></span>
+                  <div class="p-2.5 rounded-lg bg-[var(--chip-bg)] relative">
+                    <div class="flex items-center justify-between mb-0.5">
+                      <span class="text-[10px] font-mono text-[var(--soft)]">Quality</span>
+                      <template x-if="comparisonWinners[m.id]?.iq">
+                        <span class="badge-winner text-[9px] px-1 py-0.2 rounded font-mono">Best</span>
+                      </template>
+                    </div>
+                    <span class="text-lg font-black font-mono text-[var(--strong)]" x-text="`${m.intelligence ?? '--'} IQ`"></span>
                   </div>
-                  <div class="p-2.5 rounded-lg bg-[var(--chip-bg)]">
-                    <span class="text-[10px] font-mono text-[var(--soft)] block">Speed (TPS)</span>
+                  <div class="p-2.5 rounded-lg bg-[var(--chip-bg)] relative">
+                    <div class="flex items-center justify-between mb-0.5">
+                      <span class="text-[10px] font-mono text-[var(--soft)]">Speed</span>
+                      <template x-if="comparisonWinners[m.id]?.speed">
+                        <span class="badge-winner text-[9px] px-1 py-0.2 rounded font-mono">Fastest</span>
+                      </template>
+                    </div>
                     <span class="text-lg font-black font-mono text-[var(--strong)]" x-text="m.speedTps ? `${m.speedTps} tps` : '--'"></span>
                   </div>
                 </div>
@@ -606,15 +633,15 @@
                   </div>
                   <div class="flex justify-between py-1 border-b border-[var(--hair)]">
                     <span class="text-[var(--soft)]">Prompt / 1M</span>
-                    <span class="font-bold text-rose-800 dark:text-rose-400" x-text="m.price1mInput !== null ? `$${m.price1mInput}` : '--'"></span>
+                    <span class="font-bold text-rose-700 dark:text-rose-400" x-text="m.price1mInput !== null ? `$${m.price1mInput}` : '--'"></span>
                   </div>
                   <div class="flex justify-between py-1 border-b border-[var(--hair)]">
                     <span class="text-[var(--soft)]">Output / 1M</span>
-                    <span class="font-bold text-emerald-800 dark:text-emerald-400" x-text="m.price1mOutput !== null ? `$${m.price1mOutput}` : '--'"></span>
+                    <span class="font-bold text-emerald-700 dark:text-emerald-400" x-text="m.price1mOutput !== null ? `$${m.price1mOutput}` : '--'"></span>
                   </div>
                   <div class="flex justify-between py-1 border-b border-[var(--hair)]">
                     <span class="text-[var(--soft)]">Cached Read</span>
-                    <span class="font-bold text-emerald-800 dark:text-emerald-400" x-text="m.price1mCacheRead !== null ? `$${m.price1mCacheRead}` : '--'"></span>
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="m.price1mCacheRead !== null ? `$${m.price1mCacheRead}` : '--'"></span>
                   </div>
                 </div>
 
@@ -626,13 +653,13 @@
                     <span class="font-bold text-[var(--strong)]" x-text="`$${(((1500/1000000)*(m.price1mInput||0) + (500/1000000)*(m.price1mOutput||0)) * 100000).toFixed(2)}`"></span>
                   </div>
                   <div class="flex justify-between">
-                    <span class="text-[var(--soft)]">Cached (80% hit):</span>
-                    <span class="font-bold text-emerald-700 dark:text-[#c6ff00]" x-text="`$${(((1500/1000000)*(m.price1mCacheRead||(m.price1mInput||0)*0.25) + (500/1000000)*(m.price1mOutput||0)) * 100000).toFixed(2)}`"></span>
+                    <span class="text-[var(--soft)]">Cached (75% off):</span>
+                    <span class="font-bold text-emerald-600 dark:text-emerald-400" x-text="`$${(((1500/1000000)*(m.price1mCacheRead||(m.price1mInput||0)*0.25) + (500/1000000)*(m.price1mOutput||0)) * 100000).toFixed(2)}`"></span>
                   </div>
                 </div>
               </div>
 
-              <button @click="openModelDrawer(m)" class="btn btn-secondary w-full py-2 text-xs font-bold cursor-pointer mt-2">
+              <button @click="openModelDrawer(m)" class="btn btn-secondary w-full py-2 text-xs font-bold cursor-pointer mt-2 shadow-2xs">
                 Inspect Spec Sheet
               </button>
             </div>

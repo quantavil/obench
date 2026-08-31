@@ -17,12 +17,19 @@ export const PLOT_METRIC_MODES: Array<{ id: PlotMetricMode; label: string }> = [
 
 export const SORT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'iq-desc', label: 'Intelligence (High to Low)' },
+  { id: 'iq-asc', label: 'Intelligence (Low to High)' },
   { id: 'speed-desc', label: 'Output Speed (Highest TPS)' },
+  { id: 'speed-asc', label: 'Output Speed (Lowest TPS)' },
   { id: 'ttft-asc', label: 'Latency (Fastest TTFT)' },
   { id: 'coding-desc', label: 'Coding Benchmark (High to Low)' },
-  { id: 'price-asc', label: 'Price (Lowest to Highest)' },
-  { id: 'price-desc', label: 'Price (Highest to Lowest)' },
+  { id: 'price-asc', label: 'Blended Price (Lowest to Highest)' },
+  { id: 'price-desc', label: 'Blended Price (Highest to Lowest)' },
+  { id: 'prompt-asc', label: 'Prompt Price (Lowest first)' },
+  { id: 'prompt-desc', label: 'Prompt Price (Highest first)' },
+  { id: 'output-asc', label: 'Output Price (Lowest first)' },
+  { id: 'output-desc', label: 'Output Price (Highest first)' },
   { id: 'context-desc', label: 'Context Window (Largest)' },
+  { id: 'name-asc', label: 'Name (A to Z)' },
   { id: 'date-desc', label: 'Release Date (Newest)' },
 ];
 
@@ -37,11 +44,11 @@ export const PRICE_RANGES: PriceRangePreset[] = [
 
 export const CAPABILITY_FILTERS: Array<{ id: string; label: string }> = [
   { id: 'all', label: 'All Capabilities' },
-  { id: 'reasoning', label: '🧠 Reasoning / Thinking' },
-  { id: 'vision', label: '👁️ Vision / Multimodal' },
-  { id: 'fast', label: '⚡ Ultra Fast (100+ TPS)' },
-  { id: 'long-ctx', label: '📜 200k+ Context' },
-  { id: 'open-weights', label: '🔓 Open Weights' },
+  { id: 'reasoning', label: 'Reasoning / Thinking' },
+  { id: 'vision', label: 'Vision / Multimodal' },
+  { id: 'fast', label: 'Fast (100+ t/s)' },
+  { id: 'long-ctx', label: 'Long Context (200k+)' },
+  { id: 'open-weights', label: 'Open Weights' },
 ];
 
 export const COST_BASIS_OPTIONS: Array<{ id: CostBasis; label: string }> = [
@@ -69,8 +76,8 @@ export const POPULAR_CREATORS: string[] = [
 ];
 
 export const WORKLOAD_PRESETS: WorkloadPreset[] = [
-  { id: 'chat', label: '💬 Chat', inputTokens: 1500, outputTokens: 500 },
-  { id: 'agent', label: '🤖 Agent', inputTokens: 15000, outputTokens: 2500 },
-  { id: 'rag', label: '📚 RAG', inputTokens: 64000, outputTokens: 3500 },
-  { id: 'batch', label: '⚡ Batch', inputTokens: 100000, outputTokens: 10000 },
+  { id: 'chat', label: 'Chat', inputTokens: 1500, outputTokens: 500 },
+  { id: 'agent', label: 'Agent', inputTokens: 15000, outputTokens: 2500 },
+  { id: 'rag', label: 'RAG', inputTokens: 64000, outputTokens: 3500 },
+  { id: 'batch', label: 'Batch', inputTokens: 100000, outputTokens: 10000 },
 ];

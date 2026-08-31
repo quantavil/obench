@@ -1,107 +1,132 @@
-<!-- PRO TOP NAVIGATION BAR (OPENROUTER CRAFT & PRECISION) -->
-<header class="sticky top-0 z-40 w-full border-b border-[var(--glass-brd)] bg-[var(--glass-bg)] backdrop-blur-md transition-colors">
-  <div class="mx-auto flex h-14 max-w-7xl items-center justify-between px-4 sm:px-6 gap-3">
-    
+<!-- Header — OpenRouter Minimal Precision & Ergonomics -->
+<header class="sticky top-0 z-40 w-full border-b border-[var(--glass-brd)] bg-[var(--glass-bg)] backdrop-blur-xl">
+  <div class="mx-auto flex h-[56px] max-w-[1440px] items-center justify-between px-4 sm:px-6 gap-3">
+
     <!-- Left: Brand Logo & Title -->
     <div class="flex items-center gap-3 shrink-0">
-      <a href="#models" @click="modelsViewMode = 'table'" class="flex items-center gap-2.5 group cursor-pointer text-decoration-none">
-        <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-lime-400 to-[#c6ff00] text-black flex items-center justify-center font-black text-sm shadow-[0_1px_12px_rgba(198,255,0,0.45)] group-hover:scale-105 transition-transform">
-          <svg class="w-4.5 h-4.5" viewBox="0 0 24 24" fill="currentColor">
+      <a href="#models" @click="modelsViewMode = 'table'" class="flex items-center gap-2.5 group cursor-pointer">
+        <div class="w-8 h-8 rounded-[9px] bg-[var(--strong)] text-[var(--glass-bg-hi)] flex items-center justify-center group-hover:scale-[1.02] transition-transform shadow-xs">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
         </div>
         <div class="flex items-center gap-2">
-          <span class="font-extrabold text-sm sm:text-base tracking-tight text-[var(--strong)]">OBench</span>
-          <div class="hidden sm:flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[var(--chip-bg)] border border-[var(--glass-brd)] text-[10px] font-mono font-bold text-[var(--soft)]">
+          <span class="font-bold text-[15px] tracking-tight text-[var(--strong)]">OBench</span>
+          <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--chip-bg)] border border-[var(--glass-brd)] px-2 py-0.5 text-[11px] font-mono font-medium text-[var(--soft)]">
             <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-            <span x-text="`${data.models.length} Models`"></span>
-          </div>
+            <span x-text="`${data.models.length}`"></span>
+            <span class="text-[var(--muted)] hidden xs:inline">models</span>
+          </span>
         </div>
       </a>
+      <span class="hidden lg:inline text-xs text-[var(--muted)] ml-1 pl-3 border-l border-[var(--glass-brd)] font-medium">Intelligence & Cost Explorer</span>
     </div>
 
-    <!-- Center: Search Bar with ⌘K -->
-    <div class="flex-1 max-w-md mx-2 hidden sm:block">
+    <!-- Center: Search with ⌘K & Instant Clear Button -->
+    <div class="flex-1 max-w-[540px] mx-2 hidden md:block" role="search">
       <div class="relative flex items-center w-full group">
-        <svg class="w-4 h-4 text-[var(--muted)] absolute left-3 pointer-events-none group-focus-within:text-emerald-700 dark:group-focus-within:text-[#c6ff00] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+        <svg class="w-4 h-4 text-[var(--muted)] absolute left-3 pointer-events-none group-focus-within:text-[var(--strong)] transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
         </svg>
         <input
           id="search-input"
           type="search"
           x-model="search"
-          placeholder="Filter models, providers (e.g. Claude 3.7, DeepSeek R1, GPT-4.5)..."
-          class="w-full h-9 pl-9 pr-14 text-xs rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder-[var(--muted)] focus:outline-none focus:border-emerald-600 dark:focus:border-[#c6ff00] transition-all shadow-inner"
+          placeholder="Search models, providers, capabilities…"
+          aria-label="Search models"
+          class="w-full h-9 pl-9 pr-20 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)] focus:ring-2 focus:ring-[var(--strong)]/10 transition-all"
         />
-        <div class="absolute right-2.5 flex items-center gap-0.5 pointer-events-none">
-          <kbd>⌘</kbd>
-          <kbd>K</kbd>
+        <div class="absolute right-2 flex items-center gap-1.5">
+          <template x-if="search">
+            <button
+              @click="search = ''; $el.previousElementSibling?.focus()"
+              class="w-4 h-4 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer text-xs font-bold mr-1"
+              title="Clear search"
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          </template>
+          <div class="flex items-center gap-0.5 pointer-events-none">
+            <kbd class="hidden sm:inline-flex">⌘</kbd>
+            <kbd class="hidden sm:inline-flex">K</kbd>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- Right: Quick Actions -->
+    <!-- Right: Actions -->
     <div class="flex items-center gap-2 shrink-0">
-      
-      <!-- Compare Drawer Trigger Button (if models pinned) -->
+
+      <!-- Side-by-Side Comparison Pill (When models selected) -->
       <template x-if="comparedModelIds.length > 0">
         <button
           @click="modelsViewMode = 'compare'"
-          class="h-8.5 px-2.5 text-xs font-bold rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-800 dark:bg-lime-500/15 dark:border-lime-500/40 dark:text-[#c6ff00] flex items-center gap-1 cursor-pointer hover:bg-emerald-100 dark:hover:bg-lime-500/25 transition-colors"
+          class="h-8 px-3 text-xs font-semibold rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black flex items-center gap-1.5 cursor-pointer hover:opacity-90 shadow-xs transition-opacity"
           title="View side-by-side comparison"
+          aria-label="View side-by-side comparison"
         >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <use href="#icon-compare" />
-          </svg>
-          <span class="font-mono text-[11px]" x-text="`VS (${comparedModelIds.length})`"></span>
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-compare" /></svg>
+          <span x-text="`Compare ${comparedModelIds.length}`"></span>
         </button>
       </template>
 
-      <!-- Sync Button -->
+      <!-- Live Sync Button -->
       <button
         @click="syncModels()"
         :disabled="syncing"
-        class="h-8.5 px-3 text-xs font-bold rounded-lg btn-secondary flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
-        title="Sync models directly from Artificial Analysis"
-        aria-label="Sync models"
+        class="h-8 px-3 text-xs font-medium rounded-full border border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--chip-bg)] disabled:opacity-50 transition-colors shadow-2xs"
+        title="Sync live telemetry from Artificial Analysis"
+        aria-label="Sync live telemetry"
       >
-        <svg class="w-3.5 h-3.5" :class="syncing ? 'animate-spin' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <svg class="w-3.5 h-3.5" :class="syncing && 'animate-spin'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
         </svg>
-        <span class="hidden md:inline" x-text="syncing ? 'Syncing...' : 'Sync Data'"></span>
+        <span class="hidden sm:inline font-medium" x-text="syncing ? 'Syncing…' : 'Sync'"></span>
       </button>
 
-      <!-- Theme Switcher -->
+      <!-- Dark / Light Theme Toggle -->
       <button
         @click="toggleTheme()"
-        class="w-8.5 h-8.5 flex items-center justify-center rounded-lg text-[var(--soft)] hover:text-[var(--strong)] hover:bg-[var(--chip-hover)] transition-colors cursor-pointer"
-        title="Toggle dark / light theme"
+        class="w-8 h-8 flex items-center justify-center rounded-full border border-transparent text-[var(--muted)] hover:text-[var(--strong)] hover:bg-[var(--chip-bg)] hover:border-[var(--glass-brd)] transition-colors cursor-pointer"
+        title="Toggle dark/light theme"
         aria-label="Toggle theme"
       >
-        <svg class="w-4 h-4 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+        <svg class="w-4 h-4 block dark:hidden" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="4"/>
+          <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41"/>
         </svg>
-        <svg class="w-4 h-4 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+        <svg class="w-4 h-4 hidden dark:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
         </svg>
       </button>
 
     </div>
-
   </div>
 
-  <!-- Mobile Search Input Strip -->
-  <div class="sm:hidden px-4 pb-2.5 pt-1">
+  <!-- Mobile Search Bar -->
+  <div class="md:hidden px-4 pb-3 pt-0">
     <div class="relative flex items-center w-full">
-      <svg class="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
+      <svg class="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
       <input
         type="search"
         x-model="search"
-        placeholder="Filter models..."
-        class="w-full h-8.5 pl-8 pr-3 text-xs rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder-[var(--muted)] focus:outline-none focus:border-[#84cc16] dark:focus:border-[#c6ff00]"
+        placeholder="Search models, providers…"
+        aria-label="Search models"
+        class="w-full h-9 pl-8 pr-8 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)]"
       />
+      <template x-if="search">
+        <button
+          @click="search = ''"
+          class="absolute right-2.5 w-4 h-4 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer text-xs font-bold"
+          title="Clear"
+          aria-label="Clear"
+        >
+          ✕
+        </button>
+      </template>
     </div>
   </div>
 </header>

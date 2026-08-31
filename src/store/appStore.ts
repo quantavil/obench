@@ -153,7 +153,8 @@ export function bench() {
           this.focusSearch();
         }
         if (e.key === 'Escape') {
-          if (this.inspectedModel) this.inspectedModel = null;
+          if (this.inspectedModel) this.closeModelDrawer();
+          if (this.search) this.search = '';
         }
       });
 
@@ -238,15 +239,27 @@ export function bench() {
           if (!nameMatch && !provMatch && !idMatch) return false;
         }
 
-        // Capability filter
+        // Capability filter - precise matching without false negatives
         if (this.selectedCapability !== 'all') {
-          const nameLower = (m.name || '').toLowerCase();
-          const idLower = (m.id || '').toLowerCase();
+          const nameTokens = new Set((m.name || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+          const idTokens = new Set((m.id || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
+          const hasVision = m.modalities && m.modalities.includes('vision');
           if (this.selectedCapability === 'reasoning') {
-            const isReasoning = nameLower.includes('reasoning') || nameLower.includes('effort') || idLower.includes('r1') || idLower.includes('o1') || idLower.includes('o3') || idLower.includes('thinking');
+            const isReasoning =
+              nameTokens.has('reasoning') ||
+              nameTokens.has('thinking') ||
+              nameTokens.has('effort') ||
+              nameTokens.has('r1') ||
+              nameTokens.has('o1') ||
+              nameTokens.has('o3') ||
+              idTokens.has('r1') ||
+              idTokens.has('o1') ||
+              idTokens.has('o3') ||
+              (m.name || '').toLowerCase().includes('reasoning') ||
+              (m.name || '').toLowerCase().includes('thinking');
             if (!isReasoning) return false;
           } else if (this.selectedCapability === 'vision') {
-            const isVision = (m.modalities && m.modalities.includes('vision')) || nameLower.includes('vision') || nameLower.includes('multimodal') || nameLower.includes('vl') || idLower.includes('vl') || nameLower.includes('omni') || idLower.includes('4o');
+            const isVision = hasVision || nameTokens.has('vision') || nameTokens.has('multimodal') || nameTokens.has('vl') || idTokens.has('vl') || nameTokens.has('omni') || nameTokens.has('4o');
             if (!isVision) return false;
           } else if (this.selectedCapability === 'fast') {
             if ((m.speedTps ?? 0) < 100) return false;
@@ -275,8 +288,14 @@ export function bench() {
         if (this.sortBy === 'iq-desc') {
           return (b.intelligence ?? -1) - (a.intelligence ?? -1);
         }
+        if (this.sortBy === 'iq-asc') {
+          return (a.intelligence ?? 999) - (b.intelligence ?? 999);
+        }
         if (this.sortBy === 'speed-desc') {
           return (b.speedTps ?? -1) - (a.speedTps ?? -1);
+        }
+        if (this.sortBy === 'speed-asc') {
+          return (a.speedTps ?? 9999) - (b.speedTps ?? 9999);
         }
         if (this.sortBy === 'ttft-asc') {
           const ttftA = a.latencyTtft ?? Infinity;
@@ -298,6 +317,26 @@ export function bench() {
           const costA = calculateModelCost(a, this.costBasis) ?? -1;
           const costB = calculateModelCost(b, this.costBasis) ?? -1;
           return costB - costA;
+        }
+        if (this.sortBy === 'prompt-asc') {
+          const pA = a.price1mInput ?? Infinity;
+          const pB = b.price1mInput ?? Infinity;
+          return pA - pB;
+        }
+        if (this.sortBy === 'prompt-desc') {
+          const pA = a.price1mInput ?? -1;
+          const pB = b.price1mInput ?? -1;
+          return pB - pA;
+        }
+        if (this.sortBy === 'output-asc') {
+          const pA = a.price1mOutput ?? Infinity;
+          const pB = b.price1mOutput ?? Infinity;
+          return pA - pB;
+        }
+        if (this.sortBy === 'output-desc') {
+          const pA = a.price1mOutput ?? -1;
+          const pB = b.price1mOutput ?? -1;
+          return pB - pA;
         }
         if (this.sortBy === 'name-asc') {
           return (a.name || '').localeCompare(b.name || '');
@@ -325,6 +364,53 @@ export function bench() {
       } else {
         destroyActiveChart();
       }
+    },
+
+    // Table Header Sort Toggle
+    toggleSort(this: any, col: string) {
+      if (col === 'iq') {
+        this.sortBy = this.sortBy === 'iq-desc' ? 'iq-asc' : 'iq-desc';
+      } else if (col === 'speed') {
+        this.sortBy = this.sortBy === 'speed-desc' ? 'speed-asc' : 'speed-desc';
+      } else if (col === 'coding') {
+        this.sortBy = this.sortBy === 'coding-desc' ? 'iq-desc' : 'coding-desc';
+      } else if (col === 'context') {
+        this.sortBy = this.sortBy === 'context-desc' ? 'iq-desc' : 'context-desc';
+      } else if (col === 'prompt') {
+        this.sortBy = this.sortBy === 'prompt-asc' ? 'prompt-desc' : 'prompt-asc';
+      } else if (col === 'output') {
+        this.sortBy = this.sortBy === 'output-asc' ? 'output-desc' : 'output-asc';
+      } else if (col === 'blended') {
+        this.sortBy = this.sortBy === 'price-asc' ? 'price-desc' : 'price-asc';
+      } else if (col === 'name') {
+        this.sortBy = this.sortBy === 'name-asc' ? 'iq-desc' : 'name-asc';
+      }
+    },
+
+    getSortIcon(this: any, col: string): string {
+      if (col === 'iq') {
+        if (this.sortBy === 'iq-desc') return '↓';
+        if (this.sortBy === 'iq-asc') return '↑';
+      } else if (col === 'speed') {
+        if (this.sortBy === 'speed-desc') return '↓';
+        if (this.sortBy === 'speed-asc') return '↑';
+      } else if (col === 'coding') {
+        if (this.sortBy === 'coding-desc') return '↓';
+      } else if (col === 'context') {
+        if (this.sortBy === 'context-desc') return '↓';
+      } else if (col === 'prompt') {
+        if (this.sortBy === 'prompt-asc') return '↑';
+        if (this.sortBy === 'prompt-desc') return '↓';
+      } else if (col === 'output') {
+        if (this.sortBy === 'output-asc') return '↑';
+        if (this.sortBy === 'output-desc') return '↓';
+      } else if (col === 'blended') {
+        if (this.sortBy === 'price-asc') return '↑';
+        if (this.sortBy === 'price-desc') return '↓';
+      } else if (col === 'name') {
+        if (this.sortBy === 'name-asc') return '↑';
+      }
+      return '';
     },
 
     // ---------------------------------------------------- getters
@@ -390,6 +476,54 @@ export function bench() {
       return [];
     },
 
+    get comparisonWinners(): Record<string, { iq: boolean; speed: boolean; cost: boolean; ttft: boolean }> {
+      const self = this as any;
+      const result: Record<string, { iq: boolean; speed: boolean; cost: boolean; ttft: boolean }> = {};
+      const models: ModelRecord[] = self.comparedModels;
+      if (!models || models.length < 2) return result;
+
+      let bestIq = -Infinity;
+      let bestSpeed = -Infinity;
+      let bestCost = Infinity;
+      let bestTtft = Infinity;
+
+      let bestIqId = '';
+      let bestSpeedId = '';
+      let bestCostId = '';
+      let bestTtftId = '';
+
+      for (const m of models) {
+        if (m.intelligence != null && m.intelligence > bestIq) {
+          bestIq = m.intelligence;
+          bestIqId = m.id;
+        }
+        if (m.speedTps != null && m.speedTps > bestSpeed) {
+          bestSpeed = m.speedTps;
+          bestSpeedId = m.id;
+        }
+        const cost = calculateModelCost(m, self.costBasis);
+        if (cost != null && cost < bestCost) {
+          bestCost = cost;
+          bestCostId = m.id;
+        }
+        if (m.latencyTtft != null && m.latencyTtft < bestTtft) {
+          bestTtft = m.latencyTtft;
+          bestTtftId = m.id;
+        }
+      }
+
+      for (const m of models) {
+        result[m.id] = {
+          iq: m.id === bestIqId && bestIq > -Infinity,
+          speed: m.id === bestSpeedId && bestSpeed > -Infinity,
+          cost: m.id === bestCostId && bestCost < Infinity,
+          ttft: m.id === bestTtftId && bestTtft < Infinity,
+        };
+      }
+
+      return result;
+    },
+
     get estimatedRunCost(): string {
       const self = this as any;
       if (!self.inspectedModel) return '$0.00';
@@ -402,6 +536,10 @@ export function bench() {
       if (self.useBatchPricing && self.inspectedModel.price1mBatch) {
         inputP = self.inspectedModel.price1mBatch;
         outputP = outputP * 0.5;
+      }
+
+      if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
+        return 'Free / Open Weight';
       }
 
       const cost = (self.calcInputTokens / 1_000_000) * inputP + (self.calcOutputTokens / 1_000_000) * outputP;
@@ -423,6 +561,10 @@ export function bench() {
         outputP = outputP * 0.5;
       }
 
+      if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
+        return 'Free (Self-Hosted)';
+      }
+
       const perReq = (self.calcInputTokens / 1_000_000) * inputP + (self.calcOutputTokens / 1_000_000) * outputP;
       const monthly = perReq * self.dailyRequests * 30;
       return `$${monthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -431,10 +573,16 @@ export function bench() {
     // ---------------------------------------------------- actions
     openModelDrawer(this: any, model: ModelRecord) {
       this.inspectedModel = model;
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = 'hidden';
+      }
     },
 
     closeModelDrawer(this: any) {
       this.inspectedModel = null;
+      if (typeof document !== 'undefined') {
+        document.body.style.overflow = '';
+      }
     },
 
     applyWorkloadPreset(this: any, preset: 'chat' | 'agent' | 'rag' | 'batch') {
@@ -512,21 +660,34 @@ export function bench() {
     },
 
     copyToClipboard(this: any, text: string, id: string) {
-      navigator.clipboard.writeText(text).then(() => {
+      const done = () => {
         this.copiedModelId = id;
         this.toast(`Copied "${text}"`);
-        setTimeout(() => {
-          if (this.copiedModelId === id) this.copiedModelId = null;
-        }, 2000);
-      });
+        setTimeout(() => { if (this.copiedModelId === id) this.copiedModelId = null; }, 2000);
+      };
+      if (navigator.clipboard?.writeText) {
+        navigator.clipboard.writeText(text).then(done).catch(() => {
+          const ta = document.createElement('textarea');
+          ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          try { document.execCommand('copy'); done(); } catch {}
+          ta.remove();
+        });
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        try { document.execCommand('copy'); done(); } catch {}
+        ta.remove();
+      }
     },
 
     toggleTheme(this: any) {
       const isDark = document.documentElement.classList.toggle('dark');
-      localStorage.setItem('bench-theme', isDark ? 'dark' : 'light');
+      try { localStorage.setItem('bench-theme', isDark ? 'dark' : 'light'); } catch {}
       const meta = document.querySelector('meta[name="theme-color"]');
       if (meta) {
-        meta.setAttribute('content', isDark ? '#07090e' : '#f8fafc');
+        meta.setAttribute('content', isDark ? '#09090b' : '#ffffff');
       }
       this.$nextTick(() => {
         this.mountCurrentChart();
@@ -534,21 +695,23 @@ export function bench() {
     },
 
     async syncModels(this: any) {
+      if (this.syncing) return;
       this.syncing = true;
       this.syncProgress = 'Syncing models from Artificial Analysis via Cloudflare...';
-
       try {
         const models = await fetchAaModels();
         if (Array.isArray(models) && models.length > 0) {
           this.data.models = models;
           this.data.lastSyncedAt = Date.now();
-          localStorage.setItem('bench-models', JSON.stringify(models));
-          localStorage.setItem('bench-last-synced', String(this.data.lastSyncedAt));
+          try {
+            localStorage.setItem('bench-models', JSON.stringify(models));
+            localStorage.setItem('bench-last-synced', String(this.data.lastSyncedAt));
+          } catch (e) {
+            console.warn('localStorage quota exceeded, skipping persist', e);
+          }
           this.toast(`Synced ${models.length} models successfully!`);
           this.updateModelRows();
-          this.$nextTick(() => {
-            this.mountCurrentChart();
-          });
+          this.$nextTick(() => { this.mountCurrentChart(); });
         } else {
           throw new Error('No models returned from Artificial Analysis.');
         }

@@ -74,9 +74,21 @@ export function normalizeAaRecords(allRecords: any[]): ModelRecord[] {
     const rawMaxOut = m.limits?.max_output_tokens ?? m.max_output_tokens ?? m.maxOutputTokens;
     const maxOutputTokens = typeof rawMaxOut === 'number' ? rawMaxOut : 4096;
 
-    // Modalities & Licenses
-    const modalities = Array.isArray(m.modalities) ? m.modalities : (name.toLowerCase().includes('vision') || name.toLowerCase().includes('vl') || name.toLowerCase().includes('4o') || name.toLowerCase().includes('omni') ? ['text', 'vision'] : ['text']);
-    const isOpenWeights = Boolean(m.is_open_weights || m.license?.toLowerCase()?.includes('open') || provider.toLowerCase().includes('meta') || provider.toLowerCase().includes('deepseek') || provider.toLowerCase().includes('qwen') || provider.toLowerCase().includes('mistral'));
+    // Modalities - trust upstream or infer conservatively
+    const modalities = Array.isArray(m.modalities)
+      ? m.modalities
+      : (/\b(vision|multimodal|vl|omni)\b/i.test(name) || /\b(vl|4o)\b/i.test(String(m.slug || m.id || '')) ? ['text', 'vision'] : ['text']);
+    // Open weights: explicit signals + conservative provider heuristic for known open labs
+    const licenseStr = typeof m.license === 'string' ? m.license.toLowerCase() : '';
+    const providerLower = provider.toLowerCase();
+    const isOpenWeights = Boolean(
+      m.is_open_weights === true ||
+      m.open_weights === true ||
+      (licenseStr && (licenseStr.includes('apache') || licenseStr.includes('mit') || licenseStr.includes('open') || licenseStr.includes('llama'))) ||
+      // Known open-weight labs: DeepSeek, Meta (Llama), Alibaba Qwen, Mistral, etc. but only if not explicitly proprietary
+      (['deepseek', 'qwen', 'mistral'].some((k) => providerLower.includes(k)) && licenseStr !== 'proprietary') ||
+      (providerLower.includes('meta') && /llama|chameleon/i.test(name + String(m.id || '')))
+    );
 
     return {
       id: id || '',

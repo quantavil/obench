@@ -2,25 +2,28 @@
 import type { ModelRecord, CapabilityBadge } from '../types/model';
 
 export const PROVIDER_COLORS: Record<string, string> = {
-  anthropic: '#d97706',
-  openai: '#10b981',
-  google: '#8b5cf6',
+  anthropic: '#c67c3b',
+  openai: '#0ea5a0',
+  google: '#7c5cfc',
   meta: '#3b82f6',
-  deepseek: '#06b6d4',
-  mistral: '#f97316',
-  spacexai: '#ef4444',
+  deepseek: '#0e7490',
+  mistral: '#ea580c',
+  spacexai: '#dc2626',
   'z ai': '#6366f1',
-  kimi: '#3b82f6',
-  cohere: '#14b8a6',
-  microsoft: '#0ea5e9',
-  amazon: '#f59e0b',
-  alibaba: '#ec4899',
-  nvidia: '#22c55e',
-  ibm: '#3b82f6',
-  perplexity: '#06b6d4',
-  baichuan: '#f43f5e',
-  minimax: '#a855f7',
-  '01.ai': '#eab308',
+  kimi: '#2563eb',
+  cohere: '#0d9488',
+  microsoft: '#0284c7',
+  amazon: '#d97706',
+  alibaba: '#db2777',
+  nvidia: '#16a34a',
+  ibm: '#1e40af',
+  perplexity: '#0891b2',
+  baichuan: '#e11d48',
+  minimax: '#9333ea',
+  '01.ai': '#a16207',
+  qwen: '#7c3aed',
+  tencent: '#0ea5e9',
+  huggingface: '#facc15',
 };
 
 export const PROVIDER_SVGS: Record<string, string> = {
@@ -34,6 +37,10 @@ export const PROVIDER_SVGS: Record<string, string> = {
   alibaba: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm0 2.5L4.5 9.75v4.5L12 18l7.5-3.75v-4.5L12 13.5z"/></svg>',
   nvidia: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M8.94 4.25c-3.1 0-5.63 2.5-5.63 5.58 0 2.67 1.89 4.9 4.44 5.43v-2.02c-1.47-.46-2.54-1.83-2.54-3.41 0-1.99 1.63-3.6 3.63-3.6 1.48 0 2.76.88 3.32 2.15l1.83-.82C13.06 5.51 11.16 4.25 8.94 4.25zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"/></svg>',
   amazon: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M13.9 14.5c-1.8 1.4-4.3 1.9-6.5 1.4-.4-.1-.7.2-.6.6.2.7 1.2 1.4 2.4 1.7 2.4.6 5.1.1 7.2-1.3.4-.3.2-.8-.2-.8-.8-.5-1.6-1.1-2.3-1.6zm-1.7-2.6c0-.8-.1-1.6-.3-2.3-.6-1.8-2.2-2.8-4.2-2.7-2.5.1-4.2 1.7-4.4 4.2-.2 2.3 1.4 4.2 3.6 4.4 1.8.2 3.4-.7 4.1-2.3.8-1.8 1.2-1.3 1.2-1.3z"/></svg>',
+  // extended coverage for common providers found in dataset
+  qwen: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L2 7l10 5 10-5-10-5zm0 9l2.5-1.25L12 8.5l-2.5 1.25L12 11zm5.5 2.5L12 18 6.5 13.5V9l5.5 3 5.5-3v4.5z"/></svg>',
+  cohere: '<svg viewBox="0 0 24 24" fill="currentColor"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.22 4.22l2.12 2.12M17.66 17.66l2.12 2.12M2 12h3M19 12h3M4.22 19.78l2.12-2.12M17.66 6.34l2.12-2.12"/></svg>',
+  perplexity: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 1 0 10 10A10 10 0 0 0 12 2zm0 18a8 8 0 1 1 8-8 8 8 0 0 1-8 8zm2.5-11H9a1 1 0 0 0 0 2h4V14h-3a1 1 0 0 0 0 2h3a2 2 0 0 0 2-2v-3a2 2 0 0 0-2-2z"/></svg>',
 };
 
 export function providerColor(name: string | null | undefined): string {
@@ -46,14 +53,16 @@ export function providerColor(name: string | null | undefined): string {
 }
 
 export function providerSvg(name: string | null | undefined, size = 16): string {
-  if (!name) return `<span style="font-size: ${size}px;">🤖</span>`;
+  if (!name) return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:4px;background:#f4f4f5;color:#71717a;font-size:${Math.round(size * 0.55)}px;font-weight:700;">?</span>`;
   const key = name.toLowerCase().trim();
   for (const [k, svg] of Object.entries(PROVIDER_SVGS)) {
-    if (key.includes(k)) {
+    if (key === k || key.includes(k) || k.includes(key)) {
       return `<span style="display:inline-flex;width:${size}px;height:${size}px;">${svg}</span>`;
     }
   }
-  return `<span style="font-size: ${size * 0.8}px; font-weight: bold;">${name.charAt(0)}</span>`;
+  const initial = name.trim().charAt(0).toUpperCase();
+  const bg = providerColor(name);
+  return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:4px;background:${bg}18;color:${bg};font-size:${Math.round(size * 0.6)}px;font-weight:800;line-height:1;">${initial}</span>`;
 }
 
 export function extractModelBadges(model: ModelRecord | null | undefined): CapabilityBadge[] {
@@ -62,13 +71,21 @@ export function extractModelBadges(model: ModelRecord | null | undefined): Capab
   const name = (model.name || '').toLowerCase();
   const id = (model.id || '').toLowerCase();
 
-  // Reasoning / Thinking badge
-  if (name.includes('reasoning') || name.includes('effort') || id.includes('r1') || id.includes('o1') || id.includes('o3') || id.includes('thinking')) {
+  // Reasoning / Thinking badge - require word boundary or known model family token
+  const reasoningTokens = ['reasoning', 'thinking', 'effort', 'r1', 'o1', 'o3'];
+  const nameWords = new Set(name.split(/[^a-z0-9]+/).filter(Boolean));
+  const idTokens = id.split(/[^a-z0-9]+/).filter(Boolean);
+  const hasReasoningToken = reasoningTokens.some((t) => nameWords.has(t) || idTokens.includes(t) || name.includes(` ${t} `));
+  // keep legacy heuristic but guard short tokens against false positives like "pro1"
+  if (hasReasoningToken || name.includes('reasoning') || name.includes('thinking')) {
     badges.push({ label: 'Reasoning', type: 'reasoning' });
   }
 
   // Vision / Multimodal badge
-  if ((model.modalities && model.modalities.includes('vision')) || name.includes('vision') || name.includes('multimodal') || name.includes('vl') || id.includes('vl') || name.includes('omni') || id.includes('4o')) {
+  const hasVisionModal = model.modalities && model.modalities.includes('vision');
+  const visionByName = name.includes('vision') || name.includes('multimodal') || name.includes(' omni') || name.includes(' 4o');
+  const visionById = idTokens.includes('vl') || idTokens.includes('vision') || id === '4o' || id.includes('4o');
+  if (hasVisionModal || visionByName || visionById) {
     badges.push({ label: 'Vision', type: 'vision' });
   }
 
