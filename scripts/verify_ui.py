@@ -4,7 +4,7 @@ import os
 import sys
 from playwright.sync_api import sync_playwright
 
-ARTIFACT_DIR = "/home/quantavil/.gemini/antigravity-ide/brain/1a4602e0-d59c-428d-922e-a5d3c5dc7137"
+ARTIFACT_DIR = "/home/quantavil/.gemini/antigravity-ide/brain/a19c0811-1f27-4394-94d5-7b6a681b67bb"
 os.makedirs(ARTIFACT_DIR, exist_ok=True)
 
 def run():
@@ -28,35 +28,51 @@ def run():
             page.evaluate("document.documentElement.classList.add('dark')")
             page.wait_for_timeout(400)
 
-            # 1a. Table View
-            page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_table.png"))
-            print("Captured: screenshot_desktop_dark_table.png")
+            # 1a. Table View (Default: VS column hidden, top Compare button beside sync)
+            page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_table_default.png"))
+            print("Captured: screenshot_desktop_dark_table_default.png")
 
-            # 1b. Cards View
+            # 1b. Click Top Header Compare button (beside sync) -> Toggles VS column and shows Apply banner
+            page.locator("header button[aria-label='Toggle comparison']").click()
+            page.wait_for_timeout(400)
+            page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_table_compare_toggled.png"))
+            print("Captured: screenshot_desktop_dark_table_compare_toggled.png")
+
+            # Check 2 models via VS checkboxes in the table
+            page.locator("tbody input[type='checkbox']").nth(0).click()
+            page.wait_for_timeout(200)
+            page.locator("tbody input[type='checkbox']").nth(1).click()
+            page.wait_for_timeout(200)
+
+            # 1c. Click Apply & Compare button on banner -> Goes to Compare Section
+            page.locator("button:has-text('Apply & Compare')").click()
+            page.wait_for_timeout(400)
+            page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_compare.png"))
+            print("Captured: screenshot_desktop_dark_compare.png")
+
+            # 1d. Click Back to Table -> Returns to Table View
+            page.locator("button:has-text('Back to Table')").click()
+            page.wait_for_timeout(300)
+
+            # 1e. Cards View
             page.evaluate("() => { const d = Alpine.$data(document.querySelector('[x-data]')); d.modelsViewMode = 'cards'; }")
             page.wait_for_timeout(600)
             page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_cards.png"))
             print("Captured: screenshot_desktop_dark_cards.png")
 
-            # 1c. Scatter Plot View
+            # 1f. Scatter Plot View
             page.evaluate("() => { const d = Alpine.$data(document.querySelector('[x-data]')); d.modelsViewMode = 'plot'; }")
             page.wait_for_timeout(1000)
             page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_plot.png"))
             print("Captured: screenshot_desktop_dark_plot.png")
 
-            # 1d. SOTA Timeline View
+            # 1g. SOTA Timeline View
             page.evaluate("() => { const d = Alpine.$data(document.querySelector('[x-data]')); d.modelsViewMode = 'timeline'; }")
             page.wait_for_timeout(1000)
             page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_timeline.png"))
             print("Captured: screenshot_desktop_dark_timeline.png")
 
-            # 1e. Compare VS View
-            page.evaluate("() => { const d = Alpine.$data(document.querySelector('[x-data]')); d.modelsViewMode = 'compare'; }")
-            page.wait_for_timeout(600)
-            page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_compare.png"))
-            print("Captured: screenshot_desktop_dark_compare.png")
-
-            # 1f. Model Drawer Inspector (Open first model)
+            # 1g. Model Drawer Inspector (Open first model)
             page.evaluate("() => { const d = Alpine.$data(document.querySelector('[x-data]')); d.modelsViewMode = 'table'; d.openModelDrawer(d.data.models[0]); }")
             page.wait_for_timeout(600)
             page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_drawer.png"))

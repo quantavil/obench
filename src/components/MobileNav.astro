@@ -22,10 +22,10 @@
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-plot" /></svg>
       <span>Plot</span>
     </button>
-    <button @click="modelsViewMode = 'compare'"
-      aria-label="Compare View"
+    <button @click="toggleCompareCol()"
+      aria-label="Toggle VS comparison column"
       class="flex-1 px-3 py-2 rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer relative"
-      :class="modelsViewMode === 'compare' ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'">
+      :class="showCompareCol ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'">
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-compare" /></svg>
       <span>VS</span>
       <template x-if="comparedModelIds.length > 0">

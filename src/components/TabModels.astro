@@ -38,7 +38,7 @@ import ModelDrawer from './ModelDrawer.astro';
 
   <!-- 2. Control Strip — View Switcher + Filter Dropdowns (Full Width, Balanced Spacing) -->
   <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-    <!-- View Switcher Tabs -->
+    <!-- View Switcher Tabs (4 Primary Modes) -->
     <div class="seg inline-flex rounded-[10px] p-0.5 max-w-full overflow-x-auto scroll-slim shrink-0" role="tablist" aria-label="View Modes">
       <template x-for="m in MODEL_VIEW_MODES" :key="m.id">
         <button
@@ -54,15 +54,13 @@ import ModelDrawer from './ModelDrawer.astro';
             <use :href="`#${m.icon}`" />
           </svg>
           <span x-text="m.label"></span>
-          <template x-if="m.id === 'compare' && comparedModelIds.length > 0">
-            <span class="ml-0.5 min-w-4 h-4 px-1 rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black font-mono text-[10px] flex items-center justify-center font-bold" x-text="comparedModelIds.length"></span>
-          </template>
         </button>
       </template>
     </div>
 
-    <!-- Filter Dropdown Group (Evenly Spaced & Symmetrical) -->
+    <!-- Filter Controls (Balanced Spacing) -->
     <div class="flex flex-wrap items-center gap-2">
+
       <!-- Capability Filter -->
       <select
         x-model="selectedCapability"
@@ -122,6 +120,41 @@ import ModelDrawer from './ModelDrawer.astro';
     </div>
   </div>
 
+  <!-- Compare Selection & Apply Action Banner (Visible when VS Mode is ON) -->
+  <template x-if="showCompareCol && modelsViewMode === 'table'">
+    <div class="glass-soft rounded-xl p-3 px-4 border border-emerald-500/30 flex flex-wrap items-center justify-between gap-3 shadow-xs bg-emerald-500/5 transition-all">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+        <span class="text-xs font-semibold text-[var(--strong)]">Pick Models to Compare:</span>
+        <span class="text-xs text-[var(--soft)]" x-text="comparedModelIds.length === 0 ? 'Check the VS checkbox in the table next to any models (select up to 4)' : `${comparedModelIds.length} model${comparedModelIds.length > 1 ? 's' : ''} selected`"></span>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <template x-if="comparedModelIds.length > 0">
+          <button
+            @click="clearComparison()"
+            class="px-2.5 py-1 text-xs text-[var(--soft)] hover:text-rose-500 cursor-pointer transition-colors"
+          >
+            Clear
+          </button>
+        </template>
+
+        <button
+          @click="applyComparison()"
+          :disabled="comparedModelIds.length < 1"
+          class="px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs"
+          :class="comparedModelIds.length >= 1 ? 'bg-emerald-600 text-white hover:bg-emerald-700 active:scale-98' : 'bg-[var(--chip-bg)] text-[var(--muted)] cursor-not-allowed opacity-60'"
+        >
+          <span>Apply & Compare</span>
+          <template x-if="comparedModelIds.length > 0">
+            <span class="font-mono text-[11px]" x-text="`(${comparedModelIds.length})`"></span>
+          </template>
+          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-arrow-right" /></svg>
+        </button>
+      </div>
+    </div>
+  </template>
+
   <!-- 3. Best in category Highlight Banner -->
   <template x-if="bestModelInRange && (selectedPriceRanges.length > 0 || selectedModelProviders.length > 0 || selectedCapability !== 'all' || search)">
     <div class="p-3 rounded-[10px] bg-[var(--panel)] border border-[var(--glass-brd)] flex flex-wrap items-center justify-between gap-3 text-xs border-l-2 border-l-[var(--strong)] shadow-xs">
@@ -131,9 +164,9 @@ import ModelDrawer from './ModelDrawer.astro';
         <span class="text-[var(--muted)] font-mono text-xs" x-text="bestModelInRange.provider"></span>
       </div>
       <div class="flex items-center gap-2.5 shrink-0 font-mono text-xs">
-        <span class="px-2.5 py-0.5 rounded-full iq-badge text-xs" x-text="`${bestModelInRange.intelligence} IQ`"></span>
+        <span class="px-2.5 py-0.5 rounded-full iq-badge text-xs" x-text="`${fmt1(bestModelInRange.intelligence)} IQ`"></span>
         <template x-if="bestModelInRange.speedTps">
-          <span class="text-[var(--soft)] font-semibold" x-text="`${bestModelInRange.speedTps} tps`"></span>
+          <span class="text-[var(--soft)] font-semibold" x-text="bestModelInRange.speedTps"></span>
         </template>
         <template x-if="getModelCost(bestModelInRange) !== null">
           <span class="text-[var(--soft)] font-bold" x-text="getModelCost(bestModelInRange) === 0 ? 'Free' : `${fmtCost(getModelCost(bestModelInRange))}/1M`"></span>
@@ -166,7 +199,7 @@ import ModelDrawer from './ModelDrawer.astro';
               <table class="w-full text-left text-xs border-collapse">
                 <thead class="sticky top-0 z-10">
                   <tr class="border-b border-[var(--hair)] bg-[var(--panel-muted)]/95 backdrop-blur-md text-[var(--muted)] font-medium text-[11px] tracking-wide">
-                    <th class="py-3 px-3 w-10 text-center" title="Compare side-by-side">VS</th>
+                    <th x-show="showCompareCol" class="py-3 px-3 w-10 text-center" title="Compare side-by-side">VS</th>
                     <th class="py-3 px-3 w-10 text-center font-mono">#</th>
                     <th class="py-3 px-4 font-semibold sortable-th min-w-[200px]" @click="toggleSort('name')" title="Click to sort by Name">
                       <div class="flex items-center gap-1">
@@ -223,7 +256,7 @@ import ModelDrawer from './ModelDrawer.astro';
                   <template x-for="(row, idx) in paginatedModels" :key="row.model.id">
                     <tr class="pro-table-row group">
                       <!-- Compare Checkbox -->
-                      <td class="py-3 px-3 text-center" @click.stop>
+                      <td x-show="showCompareCol" class="py-3 px-3 text-center" @click.stop>
                         <input
                           type="checkbox"
                           :checked="isModelCompared(row.model)"
@@ -274,7 +307,9 @@ import ModelDrawer from './ModelDrawer.astro';
                                 aria-label="Copy Model ID"
                               >
                                 <template x-if="copiedModelId === row.model.id">
-                                  <span class="text-emerald-500 font-bold">✓</span>
+                                  <svg class="w-3 h-3 text-emerald-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                    <use href="#icon-check" />
+                                  </svg>
                                 </template>
                                 <template x-if="copiedModelId !== row.model.id">
                                   <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -291,7 +326,7 @@ import ModelDrawer from './ModelDrawer.astro';
                       <td class="py-3 px-3 text-center font-mono">
                         <span
                           class="font-semibold text-xs px-2.5 py-0.5 rounded-full iq-badge tabular"
-                          x-text="row.model.intelligence !== null ? row.model.intelligence : '--'"
+                          x-text="fmt1(row.model.intelligence)"
                         ></span>
                       </td>
 
@@ -300,10 +335,10 @@ import ModelDrawer from './ModelDrawer.astro';
                         <span class="tabular font-semibold" x-text="row.model.codingIndex !== null ? row.model.codingIndex : '--'"></span>
                       </td>
 
-                      <!-- Speed (TPS) -->
+                      <!-- Speed -->
                       <td class="py-3 px-3 text-center font-mono hidden md:table-cell">
                         <template x-if="row.model.speedTps">
-                          <span class="px-2 py-0.5 rounded bg-[var(--chip-bg)] text-[var(--strong)] font-bold tabular" x-text="`${row.model.speedTps} tps`"></span>
+                          <span class="px-2 py-0.5 rounded bg-[var(--chip-bg)] text-[var(--strong)] font-bold tabular" x-text="row.model.speedTps"></span>
                         </template>
                         <template x-if="!row.model.speedTps">
                           <span class="text-[var(--muted)]">--</span>
@@ -402,7 +437,7 @@ import ModelDrawer from './ModelDrawer.astro';
                   <span
                     class="font-bold text-xs px-2.5 py-0.5 rounded-full iq-badge tabular font-mono"
                     x-show="row.model.intelligence !== null"
-                    x-text="`${row.model.intelligence} IQ`"
+                    x-text="`${fmt1(row.model.intelligence)} IQ`"
                   ></span>
                 </div>
 
@@ -411,7 +446,10 @@ import ModelDrawer from './ModelDrawer.astro';
                 <!-- Badges & Speed -->
                 <div class="flex items-center gap-1.5 mt-2 flex-wrap text-[10px] font-mono">
                   <template x-if="row.model.speedTps">
-                    <span class="px-1.5 py-0.5 rounded bg-[var(--chip-bg)] font-bold text-[var(--strong)]" x-text="`⚡ ${row.model.speedTps} tps`"></span>
+                    <span class="px-1.5 py-0.5 rounded bg-[var(--chip-bg)] font-bold text-[var(--strong)] flex items-center gap-1">
+                      <svg class="w-3 h-3 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
+                      <span x-text="row.model.speedTps"></span>
+                    </span>
                   </template>
                   <template x-if="row.model.contextWindow">
                     <span class="px-1.5 py-0.5 rounded badge-ctx font-bold" x-text="`${Math.round(row.model.contextWindow/1000)}k ctx`"></span>
@@ -494,8 +532,19 @@ import ModelDrawer from './ModelDrawer.astro';
           <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-4 shadow-xs">
             <div class="flex items-center justify-between border-b border-[var(--hair)] pb-3">
               <div class="flex items-center gap-2">
-                <span class="px-2.5 py-0.5 rounded-full iq-badge font-mono font-bold text-xs">
-                  <span x-text="modelsViewMode === 'plot' ? '⚡ Efficiency Frontier' : '🌟 SOTA Milestones'"></span>
+                <span class="px-2.5 py-0.5 rounded-full iq-badge font-mono font-bold text-xs flex items-center gap-1.5">
+                  <template x-if="modelsViewMode === 'plot'">
+                    <span class="flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
+                      <span>Efficiency Frontier</span>
+                    </span>
+                  </template>
+                  <template x-if="modelsViewMode === 'timeline'">
+                    <span class="flex items-center gap-1">
+                      <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-star" /></svg>
+                      <span>SOTA Milestones</span>
+                    </span>
+                  </template>
                 </span>
                 <h3 class="text-sm font-bold text-[var(--strong)]" x-text="modelsViewMode === 'plot' ? 'Pareto-Optimal Models (Highest IQ per Dollar)' : 'Chronological SOTA Record Leaps'"></h3>
               </div>
@@ -511,7 +560,7 @@ import ModelDrawer from './ModelDrawer.astro';
                   <div>
                     <div class="flex items-center justify-between gap-2 mb-1">
                       <span class="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400" x-text="`#${idx + 1} Optimal`"></span>
-                      <span class="text-xs font-bold px-2 py-0.5 rounded-full iq-badge font-mono" x-text="`${m.intelligence} IQ`"></span>
+                      <span class="text-xs font-bold px-2 py-0.5 rounded-full iq-badge font-mono" x-text="`${fmt1(m.intelligence)} IQ`"></span>
                     </div>
                     <h4 class="font-bold text-[var(--strong)] text-sm truncate group-hover:text-emerald-700 dark:group-hover:text-emerald-400 transition-colors" x-text="m.name"></h4>
                     <p class="text-xs text-[var(--soft)] font-mono" x-text="m.provider"></p>
@@ -536,26 +585,41 @@ import ModelDrawer from './ModelDrawer.astro';
       </div>
 
       <!-- ========================================================================= -->
-      <!-- VIEW 5: FULL-SPECTRUM MODEL COMPARISON (SIDE-BY-SIDE WITH WINNER HIGHLIGHTS) -->
+      <!-- VIEW: FULL-SPECTRUM MODEL COMPARISON (SIDE-BY-SIDE WITH WINNER HIGHLIGHTS) -->
       <!-- ========================================================================= -->
       <div x-show="modelsViewMode === 'compare'" class="space-y-4">
         <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-5 shadow-xs">
-          <div class="flex items-center justify-between border-b border-[var(--hair)] pb-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--hair)] pb-4">
             <div>
-              <h3 class="text-base font-bold text-[var(--strong)] flex items-center gap-2">
-                <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                  <use href="#icon-compare" />
-                </svg>
-                Side-by-Side Model Benchmark & Cost Delta
-              </h3>
-              <p class="text-xs text-[var(--soft)] mt-0.5">Select up to 4 models from the chips below or table to evaluate speed, intelligence & pricing trade-offs</p>
+              <div class="flex items-center gap-2">
+                <button
+                  @click="modelsViewMode = 'table'"
+                  class="btn btn-secondary px-2.5 py-1 text-xs text-[var(--strong)] flex items-center gap-1 cursor-pointer rounded-lg shadow-2xs font-semibold"
+                  title="Return to model table"
+                >
+                  <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6" /></svg>
+                  <span>Back to Table</span>
+                </button>
+                <h3 class="text-base font-bold text-[var(--strong)] flex items-center gap-2">
+                  <svg class="w-4 h-4 text-emerald-600 dark:text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                    <use href="#icon-compare" />
+                  </svg>
+                  Side-by-Side Model Benchmark & Cost Delta
+                </h3>
+              </div>
+              <p class="text-xs text-[var(--soft)] mt-1">Comparing selected models across intelligence, speed, context & query costs</p>
             </div>
 
-            <template x-if="comparedModelIds.length > 0">
-              <button @click="clearComparison()" class="btn btn-ghost px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 cursor-pointer">
-                Clear All
+            <div class="flex items-center gap-2">
+              <template x-if="comparedModelIds.length > 0">
+                <button @click="clearComparison()" class="btn btn-ghost px-3 py-1.5 text-xs text-rose-600 dark:text-rose-400 cursor-pointer">
+                  Clear All
+                </button>
+              </template>
+              <button @click="modelsViewMode = 'table'" class="btn btn-secondary px-3.5 py-1.5 text-xs font-semibold cursor-pointer shadow-2xs">
+                Edit Selection in Table
               </button>
-            </template>
+            </div>
           </div>
 
           <!-- Quick Model Selection Chips -->
@@ -599,7 +663,9 @@ import ModelDrawer from './ModelDrawer.astro';
                           <span class="text-[11px] font-mono text-[var(--soft)] block font-medium" x-text="m.provider"></span>
                         </div>
                       </div>
-                      <button @click="toggleCompareModel(m)" class="text-[var(--muted)] hover:text-rose-500 text-xs font-bold p-1 cursor-pointer transition-colors" title="Remove" aria-label="Remove model">✕</button>
+                      <button @click="toggleCompareModel(m)" class="text-[var(--muted)] hover:text-rose-500 p-1 cursor-pointer transition-colors" title="Remove" aria-label="Remove model">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-close" /></svg>
+                      </button>
                     </div>
 
                     <h4 class="font-bold text-sm text-[var(--strong)]" x-text="m.name"></h4>
@@ -614,7 +680,7 @@ import ModelDrawer from './ModelDrawer.astro';
                             <span class="badge-winner text-[9px] px-1 py-0.2 rounded font-mono">Best</span>
                           </template>
                         </div>
-                        <span class="text-lg font-black font-mono text-[var(--strong)]" x-text="`${m.intelligence ?? '--'} IQ`"></span>
+                        <span class="text-lg font-black font-mono text-[var(--strong)]" x-text="`${fmt1(m.intelligence)} IQ`"></span>
                       </div>
                       <div class="p-2.5 rounded-lg bg-[var(--chip-bg)] relative">
                         <div class="flex items-center justify-between mb-0.5">
@@ -623,7 +689,7 @@ import ModelDrawer from './ModelDrawer.astro';
                             <span class="badge-winner text-[9px] px-1 py-0.2 rounded font-mono">Fastest</span>
                           </template>
                         </div>
-                        <span class="text-lg font-black font-mono text-[var(--strong)]" x-text="m.speedTps ? `${m.speedTps} tps` : '--'"></span>
+                        <span class="text-lg font-black font-mono text-[var(--strong)]" x-text="m.speedTps ? m.speedTps : '--'"></span>
                       </div>
                     </div>
 

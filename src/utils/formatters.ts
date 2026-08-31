@@ -10,9 +10,9 @@ export function fmtCost(val: number | null | undefined): string {
   return `$${val.toFixed(2).replace(/\.00$/, '')}`;
 }
 
-export function fmt1(val: number | null | undefined): string {
-  if (val === null || val === undefined || isNaN(val)) return '--';
-  return val.toFixed(1);
+export function fmt1(val: number | string | null | undefined): string {
+  if (val === null || val === undefined || val === '' || isNaN(Number(val))) return '--';
+  return Number(val).toFixed(1);
 }
 
 export function fmtDate(val: string | number | null | undefined): string {

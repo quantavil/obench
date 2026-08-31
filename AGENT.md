@@ -4,8 +4,8 @@ Open-source AI intelligence, benchmark, and token pricing workbench powered by A
 
 ## Structure
 - `src/pages/index.astro`: Main page layout entrypoint (Header, TabModels, ModelDrawer, MobileNav, Toast).
-- `src/components/Header.astro`: OBench top navigation bar with brand mark, ⌘K search bar, live sync button, and theme switcher.
-- `src/components/TabModels.astro`: Pro model workbench (Creator filter chips with SVG logos, View switchers: Table, Cards, Scatter Plots, SOTA Timeline, Compare VS; Sortable table headers, Capability filter, Price brackets, Cost basis).
+- `src/components/Header.astro`: OBench top navigation bar with brand mark, ⌘K search bar, Compare toggle button with live count pill, live sync button, and theme switcher.
+- `src/components/TabModels.astro`: Pro model workbench (Creator filter chips with SVG logos; 4 layout views: Table, Cards, Scatter Plots, SOTA Timeline; VS selection checkbox column, Apply & Compare action banner, and dedicated Side-by-Side Model Benchmark & Cost Delta comparison view).
 - `src/components/ModelDrawer.astro`: Slide-over model inspector sheet with full telemetry gauges (Speed TPS, TTFT, Context, Coding), Workload Cost Simulator presets, and 1-click copy.
 - `src/server/app.ts`: Universal Hono API server (`/api/health`, `/api/models`, `/api/test-aa`, `/api/sync`).
 - `functions/[[route]].ts`: Cloudflare Pages Functions adapter wrapping Hono.
@@ -14,7 +14,8 @@ Open-source AI intelligence, benchmark, and token pricing workbench powered by A
 - `src/utils/aaNormalize.ts`: Normalizer for Artificial Analysis full telemetry data.
 - `src/utils/frontier.ts`: Pareto efficiency frontier and SOTA milestone calculations.
 - `src/utils/formatters.ts`: Formats costs, dates, numbers.
-- `src/utils/providers.ts`: SVG brandmarks and color lookups for Anthropic, OpenAI, Google Gemini, Meta, DeepSeek, Mistral, xAI, Qwen, etc.
+- `src/components/Icons.astro`: Centralized SVG sprite symbols repository for all UI icons, metric indicators, and provider brand logos (strict zero-emoji policy).
+- `src/utils/providers.ts`: Provider colors and SVG symbol references (`#icon-provider-*`).
 - `scripts/verify_ui.py`: Playwright automated UI verification and multi-viewport screenshot capture suite.
 - `tests/`: Pure TypeScript `bun test` suites (`aaNormalize`, `charts`, `formatters`, `server`, `store`).
 

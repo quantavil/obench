@@ -6,7 +6,6 @@ export const MODEL_VIEW_MODES: Array<{ id: ModelViewMode; label: string; icon: s
   { id: 'cards', label: 'Cards', icon: 'icon-grid' },
   { id: 'plot', label: 'Scatter Plots', icon: 'icon-plot' },
   { id: 'timeline', label: 'SOTA Timeline', icon: 'icon-calendar' },
-  { id: 'compare', label: 'Compare (VS)', icon: 'icon-compare' },
 ];
 
 export const PLOT_METRIC_MODES: Array<{ id: PlotMetricMode; label: string }> = [

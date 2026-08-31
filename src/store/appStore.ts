@@ -72,6 +72,7 @@ export function bench() {
     modelsPageSize: 100,
 
     // Side-by-Side Model Comparison State
+    showCompareCol: false,
     comparedModelIds: [] as string[],
 
     // Token Cost Calculator state
@@ -121,11 +122,6 @@ export function bench() {
         }
       } catch (e) {
         console.warn('Failed to load stored models from localStorage', e);
-      }
-
-      // Load default compared models if available
-      if (this.data.models && this.data.models.length > 2) {
-        this.comparedModelIds = [this.data.models[0].id, this.data.models[1].id, this.data.models[4]?.id].filter(Boolean);
       }
 
       // Handle URL hash routing
@@ -620,6 +616,25 @@ export function bench() {
 
     isProviderSelected(this: any, p: string) {
       return this.selectedModelProviders.includes(p);
+    },
+
+
+    toggleCompareCol(this: any) {
+      this.showCompareCol = !this.showCompareCol;
+      if (this.showCompareCol && this.modelsViewMode !== 'table') {
+        this.modelsViewMode = 'table';
+      }
+      if (!this.showCompareCol && this.modelsViewMode === 'compare') {
+        this.modelsViewMode = 'table';
+      }
+    },
+
+    applyComparison(this: any) {
+      if (this.comparedModelIds.length === 0) {
+        this.toast('Select at least 1 model to compare');
+        return;
+      }
+      this.modelsViewMode = 'compare';
     },
 
     toggleCompareModel(this: any, model: ModelRecord) {

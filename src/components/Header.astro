@@ -40,11 +40,11 @@
           <template x-if="search">
             <button
               @click="search = ''; $el.previousElementSibling?.focus()"
-              class="w-4 h-4 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer text-xs font-bold mr-1"
+              class="w-4 h-4 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer mr-1"
               title="Clear search"
               aria-label="Clear search"
             >
-              ✕
+              <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-close" /></svg>
             </button>
           </template>
           <div class="flex items-center gap-0.5 pointer-events-none">
@@ -58,18 +58,24 @@
     <!-- Right: Actions -->
     <div class="flex items-center gap-2 shrink-0">
 
-      <!-- Side-by-Side Comparison Pill (When models selected) -->
-      <template x-if="comparedModelIds.length > 0">
-        <button
-          @click="modelsViewMode = 'compare'"
-          class="h-8 px-3 text-xs font-semibold rounded-full bg-[var(--strong)] text-white dark:bg-white dark:text-black flex items-center gap-1.5 cursor-pointer hover:opacity-90 shadow-xs transition-opacity"
-          title="View side-by-side comparison"
-          aria-label="View side-by-side comparison"
-        >
-          <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-compare" /></svg>
-          <span x-text="`Compare ${comparedModelIds.length}`"></span>
-        </button>
-      </template>
+      <!-- Compare Mode Toggle Button (Beside Sync) -->
+      <button
+        @click="showCompareCol && comparedModelIds.length > 0 && modelsViewMode === 'table' ? applyComparison() : toggleCompareCol()"
+        class="h-8 px-3 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs select-none"
+        :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--strong)] text-white dark:bg-white dark:text-black border-transparent shadow-xs ring-2 ring-emerald-500/50' : 'border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] hover:bg-[var(--chip-bg)]'"
+        :title="showCompareCol ? 'Toggle VS comparison column' : 'Enable VS comparison mode'"
+        aria-label="Toggle comparison"
+      >
+        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-compare" /></svg>
+        <span>Compare</span>
+        <template x-if="comparedModelIds.length > 0">
+          <span
+            class="min-w-4 h-4 px-1 rounded-full text-[10px] flex items-center justify-center font-bold font-mono transition-colors"
+            :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-emerald-500 text-white dark:bg-emerald-600 dark:text-white' : 'bg-emerald-600 text-white'"
+            x-text="comparedModelIds.length"
+          ></span>
+        </template>
+      </button>
 
       <!-- Live Sync Button -->
       <button
@@ -120,11 +126,11 @@
       <template x-if="search">
         <button
           @click="search = ''"
-          class="absolute right-2.5 w-4 h-4 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer text-xs font-bold"
+          class="absolute right-2.5 w-4 h-4 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--strong)] cursor-pointer"
           title="Clear"
           aria-label="Clear"
         >
-          ✕
+          <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-close" /></svg>
         </button>
       </template>
     </div>

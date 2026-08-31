@@ -15,9 +15,14 @@ describe('formatters', () => {
     expect(fmtDateTimeCompact('invalid')).toBe('');
   });
 
-  test('fmt1 formats single decimal precision', () => {
+  test('fmt1 formats single decimal precision including integer scores', () => {
     expect(fmt1(95.46)).toBe('95.5');
     expect(fmt1(80)).toBe('80.0');
+    expect(fmt1(64)).toBe('64.0');
+    expect(fmt1('64')).toBe('64.0');
+    expect(fmt1(0)).toBe('0.0');
+    expect(fmt1(null)).toBe('--');
+    expect(fmt1(undefined)).toBe('--');
   });
 
   test('fmtDate formats timestamp to readable date', () => {

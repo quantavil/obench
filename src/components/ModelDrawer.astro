@@ -50,7 +50,7 @@
         <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
           <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5">Intelligence</span>
           <div class="flex items-baseline gap-1.5">
-            <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="inspectedModel.intelligence ?? '--'"></span>
+            <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="fmt1(inspectedModel.intelligence)"></span>
             <span class="text-xs font-mono text-[var(--muted)]">IQ</span>
           </div>
         </div>
@@ -68,7 +68,8 @@
       <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
         <div class="flex items-center justify-between border-b border-[var(--hair)] pb-1.5">
           <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5">
-            ⚡ Speed & Latency
+            <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
+            <span>Speed & Latency</span>
           </span>
           <template x-if="inspectedModel.isOpenWeights">
             <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open</span>
@@ -78,7 +79,7 @@
         <div class="grid grid-cols-2 gap-2 text-xs font-mono">
           <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
             <span class="text-[10px] text-[var(--soft)] block">Speed</span>
-            <span class="text-sm font-bold text-[var(--strong)]" x-text="inspectedModel.speedTps ? `${inspectedModel.speedTps} tps` : '--'"></span>
+            <span class="text-sm font-bold text-[var(--strong)]" x-text="inspectedModel.speedTps ? inspectedModel.speedTps : '--'"></span>
           </div>
           <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
             <span class="text-[10px] text-[var(--soft)] block">TTFT</span>
@@ -97,8 +98,9 @@
 
       <!-- Benchmark Sub-Scores -->
       <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
-        <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
-          📊 Benchmark Sub-Indices
+        <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5 mb-1">
+          <svg class="w-3.5 h-3.5 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chart-bar" /></svg>
+          <span>Benchmark Sub-Indices</span>
         </span>
         <div class="space-y-1.5 text-xs font-mono">
           <div class="flex items-center justify-between py-0.5">
@@ -118,8 +120,9 @@
 
       <!-- Token Economics Card -->
       <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
-        <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
-          💰 Token Pricing Breakdown
+        <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5 mb-1">
+          <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-dollar" /></svg>
+          <span>Token Pricing Breakdown</span>
         </span>
         
         <div class="space-y-1.5 text-xs font-mono">
@@ -331,7 +334,7 @@
             <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
               <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5">Intelligence</span>
               <div class="flex items-baseline gap-1.5">
-                <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="inspectedModel.intelligence ?? '--'"></span>
+                <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="fmt1(inspectedModel.intelligence)"></span>
                 <span class="text-xs font-mono text-[var(--muted)]">IQ</span>
               </div>
             </div>
@@ -349,7 +352,8 @@
           <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
             <div class="flex items-center justify-between border-b border-[var(--hair)] pb-1.5">
               <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5">
-                ⚡ Speed & Latency
+                <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
+                <span>Speed & Latency</span>
               </span>
               <template x-if="inspectedModel.isOpenWeights">
                 <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open</span>
@@ -359,7 +363,7 @@
             <div class="grid grid-cols-2 gap-2 text-xs font-mono">
               <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
                 <span class="text-[10px] text-[var(--soft)] block">Speed</span>
-                <span class="text-sm font-bold text-[var(--strong)]" x-text="inspectedModel.speedTps ? `${inspectedModel.speedTps} tps` : '--'"></span>
+                <span class="text-sm font-bold text-[var(--strong)]" x-text="inspectedModel.speedTps ? inspectedModel.speedTps : '--'"></span>
               </div>
               <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
                 <span class="text-[10px] text-[var(--soft)] block">TTFT</span>
@@ -378,8 +382,9 @@
 
           <!-- Benchmark Breakdown Sub-Scores -->
           <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
-            <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
-              📊 Benchmark Sub-Indices
+            <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5 mb-1">
+              <svg class="w-3.5 h-3.5 text-indigo-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-chart-bar" /></svg>
+              <span>Benchmark Sub-Indices</span>
             </span>
             <div class="space-y-1.5 text-xs font-mono">
               <div class="flex items-center justify-between py-0.5">
@@ -399,8 +404,9 @@
 
           <!-- Token Economics Card -->
           <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
-            <span class="text-xs font-mono font-bold text-[var(--strong)] block mb-1">
-              💰 Token Pricing Breakdown
+            <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5 mb-1">
+              <svg class="w-3.5 h-3.5 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-dollar" /></svg>
+              <span>Token Pricing Breakdown</span>
             </span>
             
             <div class="space-y-1.5 text-xs font-mono">

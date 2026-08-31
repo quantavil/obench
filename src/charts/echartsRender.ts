@@ -1,7 +1,7 @@
 import * as echarts from 'echarts';
 import { providerColor } from '../utils/providers';
 import { computeEfficiencyFrontier, computeSotaProgression, calculateModelCost } from '../utils/frontier';
-import { fmtCost } from '../utils/formatters';
+import { fmtCost, fmt1 } from '../utils/formatters';
 import type { ModelRecord, CostBasis, PlotMetricMode } from '../types/model';
 
 let activeChartInstance: echarts.ECharts | null = null;
@@ -81,11 +81,11 @@ export function renderEChartsPlot(
                   ${m.name}
                 </div>
                 <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
-                  ${m.intelligence} IQ
+                  ${fmt1(m.intelligence)} IQ
                 </span>
               </div>
               <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText}; margin-bottom: 6px;">
-                ${m.provider} · Speed: <b style="color:${themeColors.text}">${m.speedTps} tok/s</b>
+                ${m.provider} · Speed: <b style="color:${themeColors.text}">${m.speedTps}</b>
               </div>
               <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText};">
                 TTFT: ${m.latencyTtft ? `${m.latencyTtft}s` : '--'} · Context: ${m.contextWindow ? `${Math.round(m.contextWindow/1000)}k` : '--'}
@@ -160,11 +160,11 @@ export function renderEChartsPlot(
                   ${m.name}
                 </div>
                 <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
-                  ${m.intelligence} IQ
+                  ${fmt1(m.intelligence)} IQ
                 </span>
               </div>
               <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText};">
-                TTFT: <b>${m.latencyTtft}s</b> · Speed: <b>${m.speedTps} tok/s</b>
+                TTFT: <b>${m.latencyTtft}s</b> · Speed: <b>${m.speedTps}</b>
               </div>
             </div>
           `;
@@ -260,11 +260,11 @@ export function renderEChartsPlot(
                   ${m.name}
                 </div>
                 <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
-                  ${m.intelligence} IQ
+                  ${fmt1(m.intelligence)} IQ
                 </span>
               </div>
               <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText}; margin-bottom: 8px;">
-                ${m.provider} · Speed: ${m.speedTps ? `${m.speedTps} tps` : '--'}
+                ${m.provider} · Speed: ${m.speedTps ? `${m.speedTps}` : '--'}
               </div>
               <div style="padding-top: 8px; border-top: 1px solid ${themeColors.gridLine}; display: flex; justify-content: space-between; font-size: 11px; font-family: 'JetBrains Mono', monospace;">
                 <span style="color: ${themeColors.subText};">Effective Rate</span>
@@ -410,7 +410,7 @@ export function renderEChartsTimeline(
                 ${m.name}
               </div>
               <span style="font-family: 'JetBrains Mono', monospace; font-weight: 800; font-size: 11px; padding: 2px 6px; border-radius: 9999px; background: ${isDark ? '#fafafa' : '#09090b'}; color: ${isDark ? '#09090b' : '#fafafa'};">
-                ${m.intelligence} IQ
+                ${fmt1(m.intelligence)} IQ
               </span>
             </div>
             <div style="font-size: 11px; font-family: 'JetBrains Mono', monospace; color: ${themeColors.subText};">
