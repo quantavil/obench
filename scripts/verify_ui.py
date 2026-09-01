@@ -163,12 +163,7 @@ def run():
             page.locator("button:has-text('Back to Table')").click()
             page.wait_for_timeout(300)
 
-            # 1f. Cards View
-            page.evaluate("() => { const d = Alpine.$data(document.querySelector('[x-data]')); d.modelsViewMode = 'cards'; }")
-            page.wait_for_timeout(600)
-            page.wait_for_selector("#panel-cards .model-card", timeout=5000)
-            page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_desktop_dark_cards.png"))
-            print("✓ Captured: screenshot_desktop_dark_cards.png")
+            # 1f. Cards View — removed (was bento grid, now table handles mobile)
 
             # 1g. Scatter Plot View (Modular Lazy Loaded ECharts)
             page.evaluate("() => { const d = Alpine.$data(document.querySelector('[x-data]')); d.modelsViewMode = 'plot'; }")
@@ -262,22 +257,26 @@ def run():
             assert mob_nav.is_visible(), "Mobile bottom nav should be visible"
             nav_buttons = mob_nav.locator("button")
             btn_count = nav_buttons.count()
-            assert btn_count >= 4, f"Expected 4 mobile nav buttons, got {btn_count}"
+            assert btn_count == 3, f"Expected 3 mobile nav buttons (Table/Plot/Timeline), got {btn_count}"
             for i in range(btn_count):
                 box = nav_buttons.nth(i).bounding_box()
                 assert box is not None and box["height"] >= 34 and box["width"] >= 40, f"Nav button {i} too small: {box}"
             print("✓ Verified: Mobile navigation touch target sizes compliant")
 
-            # 3c. Mobile Cards View
-            cards_nav_btn = mob_nav.locator("button[aria-label='Cards View']")
-            cards_nav_btn.click()
+            # 3c. Mobile Timeline View (cards removed)
+            timeline_nav_btn = mob_nav.locator("button[aria-label='SOTA Timeline View']")
+            timeline_nav_btn.click()
+            mob_page.wait_for_timeout(800)
+            mob_page.wait_for_selector("#echarts-container svg", timeout=5000)
+            # back to table for drawer test
+            mob_page.locator("button[aria-label='Table View']").click()
             mob_page.wait_for_timeout(600)
-            mob_page.wait_for_selector("#panel-cards .model-card", timeout=5000)
-            mob_page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_mobile_dark_cards.png"))
-            print("✓ Captured: screenshot_mobile_dark_cards.png")
+            mob_page.wait_for_selector(".model-card", timeout=5000)
+            mob_page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_mobile_dark_timeline.png"))
+            print("✓ Captured: screenshot_mobile_dark_timeline.png")
 
             # 3d. Mobile Inspector: Focus Trap, Escape, and Focus Restoration
-            inspect_trigger = mob_page.locator("#panel-cards .model-card").first
+            inspect_trigger = mob_page.locator(".model-card").first
             inspect_trigger.focus()
             inspect_trigger.click()
             mob_page.wait_for_timeout(600)

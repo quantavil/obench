@@ -23,7 +23,7 @@ export interface ModelRecord {
 
 export type CostBasis = 'blended' | 'input' | 'output' | 'cached' | 'batch';
 
-export type ModelViewMode = 'table' | 'cards' | 'plot' | 'timeline' | 'compare';
+export type ModelViewMode = 'table' | 'plot' | 'timeline' | 'compare';
 
 export type PlotMetricMode = 'iq-cost' | 'iq-speed' | 'ttft-speed';
 

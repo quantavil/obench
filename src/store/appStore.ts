@@ -89,6 +89,7 @@ export function bench() {
     // Models filter & sort state
     modelsViewMode: 'table' as ModelViewMode,
     plotMetric: 'iq-cost' as PlotMetricMode,
+    plotScale: 'log' as 'log' | 'linear',
     sortBy: 'iq-desc',
     selectedModelProviders: [] as string[],
     selectedPriceRanges: [] as string[],
@@ -166,11 +167,12 @@ export function bench() {
           this.modelsViewMode = 'plot';
         } else if (h === 'timeline') {
           this.modelsViewMode = 'timeline';
-        } else if (h === 'cards') {
-          this.modelsViewMode = 'cards';
         } else if (h === 'compare') {
           this.modelsViewMode = 'compare';
         } else if (h === 'table') {
+          this.modelsViewMode = 'table';
+        } else if (h === 'cards') {
+          // cards removed — redirect to table
           this.modelsViewMode = 'table';
         }
       };
@@ -228,8 +230,17 @@ export function bench() {
         });
       });
 
+      this.$watch('plotScale', () => {
+        this.$nextTick(() => {
+          this.mountCurrentChart();
+        });
+      });
+
       this.$watch('costBasis', () => {
         this.updateOptimalModels();
+        this.$nextTick(() => {
+          this.mountCurrentChart();
+        });
       });
 
       this.$watch('inspectedModel', () => {
@@ -436,7 +447,7 @@ export function bench() {
         const charts = await loadCharts();
         const render = () => {
           if (this.modelsViewMode === 'plot') {
-            charts.renderEChartsPlot(chartEl, this.filteredModels, this.costBasis, this.plotMetric, isDark);
+            charts.renderEChartsPlot(chartEl, this.filteredModels, this.costBasis, this.plotMetric, isDark, this.plotScale);
           } else if (this.modelsViewMode === 'timeline') {
             charts.renderEChartsTimeline(chartEl, this.filteredModels, isDark);
           }

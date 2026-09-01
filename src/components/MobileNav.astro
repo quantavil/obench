@@ -1,9 +1,8 @@
-<!-- Mobile bottom nav — Restrained Floating Pill -->
+<!-- Mobile bottom nav — Restrained Floating Pill (VS removed: header Compare is single source) -->
 <nav class="sm:hidden fixed bottom-3 left-1/2 -translate-x-1/2 z-40 w-[calc(100%-1.5rem)] max-w-sm" aria-label="Mobile Navigation">
-  <div class="glass rounded-full p-1 flex items-center justify-between shadow-xl border border-[var(--glass-brd)] bg-[var(--glass-bg)] backdrop-blur-xl mb-[env(safe-area-inset-bottom)]">
+  <div class="glass rounded-full p-1 flex items-center justify-between shadow-xl mb-[env(safe-area-inset-bottom)]">
     <button
       @click="modelsViewMode = 'table'"
-      role="button"
       :aria-pressed="modelsViewMode === 'table'"
       aria-label="Table View"
       class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -14,20 +13,7 @@
     </button>
 
     <button
-      @click="modelsViewMode = 'cards'"
-      role="button"
-      :aria-pressed="modelsViewMode === 'cards'"
-      aria-label="Cards View"
-      class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'cards' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
-    >
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-grid" /></svg>
-      <span>Cards</span>
-    </button>
-
-    <button
       @click="modelsViewMode = 'plot'"
-      role="button"
       :aria-pressed="modelsViewMode === 'plot'"
       aria-label="Scatter Plots View"
       class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
@@ -38,21 +24,14 @@
     </button>
 
     <button
-      @click="toggleCompareCol()"
-      role="button"
-      :aria-pressed="showCompareCol"
-      aria-label="Toggle VS comparison column"
-      class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer relative"
-      :class="showCompareCol ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
+      @click="modelsViewMode = 'timeline'"
+      :aria-pressed="modelsViewMode === 'timeline'"
+      aria-label="SOTA Timeline View"
+      class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+      :class="modelsViewMode === 'timeline' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
-      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-compare" /></svg>
-      <span>VS</span>
-      <template x-if="comparedModelIds.length > 0">
-        <span
-          class="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-[var(--accent)] text-[#090d10] font-mono text-[9px] flex items-center justify-center font-bold"
-          x-text="comparedModelIds.length"
-        ></span>
-      </template>
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-calendar" /></svg>
+      <span>Timeline</span>
     </button>
   </div>
 </nav>

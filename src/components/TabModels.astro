@@ -5,42 +5,42 @@ import ModelDrawer from './ModelDrawer.astro';
 <!-- PRO AI MODEL EXPLORER WORKBENCH (NEUTRAL PRECISION & RESPONSIVE ERGONOMICS) -->
 <section class="space-y-4 pt-2 pb-16">
 
-  <!-- 1. Creator Filter Chips — Neutral pill style + "All Providers" Disclosure -->
+  <!-- 1. Creator Filter Chips — Neutral pill style + "All Providers" Disclosure (fixed: panel not clipped by overflow-x) -->
   <div class="flex items-center justify-between gap-3 border-b border-[var(--hair)] pb-3 -mx-1 px-1">
-    <div class="flex items-center gap-1.5 overflow-x-auto scroll-slim py-0.5 min-w-0" role="toolbar" aria-label="Filter by provider">
-      <button
-        @click="selectedModelProviders = []"
-        role="button"
-        :aria-pressed="selectedModelProviders.length === 0"
-        class="shrink-0 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border"
-        :class="selectedModelProviders.length === 0 ? 'chip-active' : 'chip'"
-        aria-label="All providers"
-      >
-        All <span class="opacity-60" x-text="`· ${data.models.length}`"></span>
-      </button>
-
-      <!-- Popular provider chips -->
-      <template x-for="p in availableModelProviders.slice(0, 10)" :key="p">
+    <div class="flex items-center gap-2 min-w-0 flex-1">
+      <div class="flex items-center gap-1.5 overflow-x-auto scroll-slim py-0.5 min-w-0 flex-1" role="toolbar" aria-label="Filter by provider">
         <button
-          @click="toggleProvider(p)"
-          role="button"
-          :aria-pressed="isProviderSelected(p)"
-          class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5 border"
-          :class="isProviderSelected(p) ? 'chip-active' : 'chip'"
-          :aria-label="`Filter by ${p}`"
+          @click="selectedModelProviders = []"
+          :aria-pressed="selectedModelProviders.length === 0"
+          class="shrink-0 px-3 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border"
+          :class="selectedModelProviders.length === 0 ? 'chip-active' : 'chip'"
+          aria-label="All providers"
         >
-          <span class="w-3.5 h-3.5 flex items-center justify-center shrink-0 rounded" :style="`color: ${providerColor(p)}`" x-html="providerSvg(p, 13)"></span>
-          <span x-text="p"></span>
+          All <span class="opacity-60" x-text="`· ${data.models.length}`"></span>
         </button>
-      </template>
 
-      <!-- All Providers Disclosure Dropdown for long tail -->
+        <!-- Popular provider chips -->
+        <template x-for="p in availableModelProviders.slice(0, 10)" :key="p">
+          <button
+            @click="toggleProvider(p)"
+            :aria-pressed="isProviderSelected(p)"
+            class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all flex items-center gap-1.5 border"
+            :class="isProviderSelected(p) ? 'chip-active' : 'chip'"
+            :aria-label="`Filter by ${p}`"
+          >
+            <span class="w-3.5 h-3.5 flex items-center justify-center shrink-0 rounded" :style="`color: ${providerColor(p)}`" x-html="providerSvg(p, 13)"></span>
+            <span x-text="p"></span>
+          </button>
+        </template>
+      </div>
+
+      <!-- All Providers Disclosure Dropdown for long tail — outside scroll container so panel not clipped -->
       <template x-if="availableModelProviders.length > 10">
         <details class="multi-dd shrink-0" @click.outside="$el.open = false">
-          <summary class="h-7 px-2.5 rounded-full text-xs font-medium border chip cursor-pointer flex items-center gap-1">
+          <summary class="h-7 px-2.5 rounded-full text-xs font-medium border chip cursor-pointer flex items-center gap-1" aria-label="More providers">
             <span>More providers</span>
-            <svg class="w-3 h-3 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            <svg class="w-3 h-3 text-[var(--muted)]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+              <use href="#icon-chevron-down" />
             </svg>
           </summary>
           <div class="multi-dd-panel scroll-slim right-0 left-auto">
@@ -101,24 +101,28 @@ import ModelDrawer from './ModelDrawer.astro';
     <!-- Filter Controls -->
     <div class="flex flex-wrap items-center gap-2">
 
-      <!-- Capability Filter -->
-      <select
-        x-model="selectedCapability"
-        class="field-select h-8 px-2.5 cursor-pointer text-xs"
-        title="Filter by capability"
-        aria-label="Filter by capability"
-      >
-        <template x-for="cap in CAPABILITY_FILTERS" :key="cap.id">
-          <option :value="cap.id" x-text="cap.label" :selected="selectedCapability === cap.id"></option>
-        </template>
-      </select>
-
-      <!-- Price Ranges Dropdown -->
+      <!-- Capability Filter — premium multi-dd (was generic select) -->
       <details class="multi-dd" @click.outside="$el.open = false">
-        <summary class="h-8">
+        <summary class="h-8" aria-label="Filter by capability">
+          <span class="truncate text-xs" x-text="CAPABILITY_FILTERS.find(c => c.id === selectedCapability)?.label || 'All Capabilities'"></span>
+          <svg class="w-3 h-3 text-[var(--muted)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-chevron-down" /></svg>
+        </summary>
+        <div class="multi-dd-panel scroll-slim">
+          <template x-for="cap in CAPABILITY_FILTERS" :key="cap.id">
+            <button @click="selectedCapability = cap.id; $el.closest('details').open = false" class="w-full text-left px-2.5 py-2 rounded-[6px] text-xs flex items-center justify-between transition-colors" :class="selectedCapability === cap.id ? 'bg-[var(--chip-bg)] font-semibold text-[var(--strong)]' : 'text-[var(--soft)] hover:bg-[var(--chip-hover)] hover:text-[var(--strong)]'">
+              <span x-text="cap.label"></span>
+              <svg x-show="selectedCapability === cap.id" class="w-3 h-3 text-[var(--accent)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><use href="#icon-check" /></svg>
+            </button>
+          </template>
+        </div>
+      </details>
+
+      <!-- Price Ranges Dropdown — premium multi-dd (reference style) -->
+      <details class="multi-dd" @click.outside="$el.open = false">
+        <summary class="h-8" aria-label="Filter by price range">
           <span class="font-mono text-xs font-semibold">$</span>
           <span class="truncate text-xs" x-text="selectedPriceRanges.length === 0 ? 'All pricing' : selectedPriceRanges.length === 1 ? PRICE_RANGES.find(r => r.id === selectedPriceRanges[0]).label : `${selectedPriceRanges.length} price filters`"></span>
-          <svg class="w-3 h-3 text-[var(--muted)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+          <svg class="w-3 h-3 text-[var(--muted)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-chevron-down" /></svg>
         </summary>
         <div class="multi-dd-panel scroll-slim">
           <template x-for="r in PRICE_RANGES" :key="r.id">
@@ -130,19 +134,37 @@ import ModelDrawer from './ModelDrawer.astro';
         </div>
       </details>
 
-      <!-- Sort Selector -->
-      <select x-model="sortBy" class="field-select h-8 px-2.5 cursor-pointer text-xs" title="Sort order" aria-label="Sort order">
-        <template x-for="opt in SORT_OPTIONS" :key="opt.id">
-          <option :value="opt.id" x-text="opt.label" :selected="sortBy === opt.id"></option>
-        </template>
-      </select>
+      <!-- Sort Selector — premium multi-dd (was generic select) -->
+      <details class="multi-dd" @click.outside="$el.open = false">
+        <summary class="h-8" aria-label="Sort order">
+          <span class="truncate text-xs" x-text="SORT_OPTIONS.find(o => o.id === sortBy)?.label || 'Sort'"></span>
+          <svg class="w-3 h-3 text-[var(--muted)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-chevron-down" /></svg>
+        </summary>
+        <div class="multi-dd-panel scroll-slim right-0 left-auto min-w-[18rem]">
+          <template x-for="opt in SORT_OPTIONS" :key="opt.id">
+            <button @click="sortBy = opt.id; $el.closest('details').open = false" class="w-full text-left px-2.5 py-2 rounded-[6px] text-xs flex items-center justify-between transition-colors" :class="sortBy === opt.id ? 'bg-[var(--chip-bg)] font-semibold text-[var(--strong)]' : 'text-[var(--soft)] hover:bg-[var(--chip-hover)] hover:text-[var(--strong)]'">
+              <span class="truncate" x-text="opt.label"></span>
+              <svg x-show="sortBy === opt.id" class="w-3 h-3 text-[var(--accent)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><use href="#icon-check" /></svg>
+            </button>
+          </template>
+        </div>
+      </details>
 
-      <!-- Cost Basis Selector -->
-      <select x-model="costBasis" class="field-select h-8 px-2.5 cursor-pointer text-xs" title="Cost basis rate" aria-label="Cost basis rate">
-        <template x-for="b in COST_BASIS_OPTIONS" :key="b.id">
-          <option :value="b.id" x-text="b.label" :selected="costBasis === b.id"></option>
-        </template>
-      </select>
+      <!-- Cost Basis Selector — premium multi-dd (was generic select) -->
+      <details class="multi-dd" @click.outside="$el.open = false">
+        <summary class="h-8" aria-label="Cost basis rate">
+          <span class="truncate text-xs" x-text="COST_BASIS_OPTIONS.find(b => b.id === costBasis)?.label || 'Cost basis'"></span>
+          <svg class="w-3 h-3 text-[var(--muted)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><use href="#icon-chevron-down" /></svg>
+        </summary>
+        <div class="multi-dd-panel scroll-slim right-0 left-auto">
+          <template x-for="b in COST_BASIS_OPTIONS" :key="b.id">
+            <button @click="costBasis = b.id; $el.closest('details').open = false" class="w-full text-left px-2.5 py-2 rounded-[6px] text-xs flex items-center justify-between transition-colors" :class="costBasis === b.id ? 'bg-[var(--chip-bg)] font-semibold text-[var(--strong)]' : 'text-[var(--soft)] hover:bg-[var(--chip-hover)] hover:text-[var(--strong)]'">
+              <span x-text="b.label"></span>
+              <svg x-show="costBasis === b.id" class="w-3 h-3 text-[var(--accent)] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><use href="#icon-check" /></svg>
+            </button>
+          </template>
+        </div>
+      </details>
 
       <!-- Custom Price Min/Max Inputs -->
       <template x-if="selectedPriceRanges.includes('custom')">
@@ -172,7 +194,7 @@ import ModelDrawer from './ModelDrawer.astro';
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse"></span>
         <span class="text-xs font-semibold text-[var(--strong)]">Pick Models to Compare:</span>
-        <span class="text-xs text-[var(--soft)]" x-text="comparedModelIds.length === 0 ? 'Check the VS checkbox in the table or cards next to any models (select up to 4)' : `${comparedModelIds.length} model${comparedModelIds.length > 1 ? 's' : ''} selected`"></span>
+        <span class="text-xs text-[var(--soft)]" x-text="comparedModelIds.length === 0 ? 'Check the VS checkbox in the table next to any models (select up to 4)' : `${comparedModelIds.length} model${comparedModelIds.length > 1 ? 's' : ''} selected`"></span>
       </div>
 
       <div class="flex items-center gap-2">
@@ -611,114 +633,7 @@ import ModelDrawer from './ModelDrawer.astro';
         </template>
       </div>
 
-      <!-- ========================================================================= -->
-      <!-- VIEW 2: BENTO CARDS VIEW                                                  -->
-      <!-- ========================================================================= -->
-      <div
-        id="panel-cards"
-        role="tabpanel"
-        aria-labelledby="tab-cards"
-        x-show="modelsViewMode === 'cards'"
-      >
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-3">
-          <template x-for="(row, idx) in paginatedModels" :key="row.model.id">
-            <div
-              @click="openModelDrawer(row.model, $el)"
-              @keydown.enter.prevent="openModelDrawer(row.model, $el)"
-              @keydown.space.prevent="openModelDrawer(row.model, $el)"
-              tabindex="0"
-              role="button"
-              :aria-label="`Inspect ${row.model.name}`"
-              class="model-card p-4 flex flex-col justify-between gap-3 cursor-pointer group"
-            >
-              <div>
-                <div class="flex items-start justify-between gap-2 mb-2.5">
-                  <div class="flex items-center gap-2 min-w-0">
-                    <div
-                      class="w-7 h-7 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
-                      :style="`color: ${providerColor(row.model.provider)}`"
-                      x-html="providerSvg(row.model.provider, 15)"
-                    ></div>
-                    <div class="min-w-0">
-                      <span class="text-[11px] font-mono text-[var(--soft)] truncate block font-medium" x-text="row.model.provider"></span>
-                    </div>
-                  </div>
-
-                  <div class="flex items-center gap-2 shrink-0" @click.stop>
-                    <span
-                      class="font-bold text-xs px-2.5 py-0.5 rounded-full iq-badge tabular font-mono"
-                      x-show="row.model.intelligence !== null"
-                      x-text="`${fmt1(row.model.intelligence)} IQ`"
-                    ></span>
-                    <template x-if="showCompareCol">
-                      <input
-                        type="checkbox"
-                        :checked="isModelCompared(row.model)"
-                        @change="toggleCompareModel(row.model)"
-                        class="rounded-[4px] border-[var(--field-border)] accent-[var(--accent)] cursor-pointer w-3.5 h-3.5"
-                        :aria-label="`Compare ${row.model.name}`"
-                      />
-                    </template>
-                  </div>
-                </div>
-
-                <h4 class="font-bold text-[var(--strong)] text-sm sm:text-base truncate group-hover:underline transition-colors" x-text="row.model.name"></h4>
-
-                <!-- Badges & Speed -->
-                <div class="flex items-center gap-1.5 mt-2 flex-wrap text-[10px] font-mono">
-                  <template x-if="row.model.speedTps">
-                    <span class="px-1.5 py-0.5 rounded bg-[var(--chip-bg)] font-bold text-[var(--strong)] flex items-center gap-1">
-                      <svg class="w-3 h-3 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
-                      <span x-text="`${row.model.speedTps} tps`"></span>
-                    </span>
-                  </template>
-                  <template x-if="row.model.contextWindow">
-                    <span class="px-1.5 py-0.5 rounded badge-ctx font-bold" x-text="`${Math.round(row.model.contextWindow/1000)}k ctx`"></span>
-                  </template>
-                  <template x-if="row.model.isOpenWeights">
-                    <span class="px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/20">Open</span>
-                  </template>
-                </div>
-              </div>
-
-              <div class="pt-3 border-t border-[var(--hair)] flex items-center justify-between text-xs font-mono">
-                <div class="flex items-center gap-2">
-                  <template x-if="row.model.price1mInput !== null">
-                    <span class="text-rose-700 dark:text-rose-400 font-medium" x-text="row.model.price1mInput === 0 ? 'In Free' : `In $${row.model.price1mInput}`"></span>
-                  </template>
-                  <template x-if="row.model.price1mInput === null">
-                    <span class="text-[var(--muted)] font-medium">In --</span>
-                  </template>
-                  <template x-if="row.model.price1mOutput !== null">
-                    <span class="text-[var(--accent)] font-medium" x-text="row.model.price1mOutput === 0 ? 'Out Free' : `Out $${row.model.price1mOutput}`"></span>
-                  </template>
-                  <template x-if="row.model.price1mOutput === null">
-                    <span class="text-[var(--muted)] font-medium">Out --</span>
-                  </template>
-                </div>
-
-                <div class="text-right">
-                  <span class="font-bold text-[var(--strong)]" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : `${fmtCost(getModelCost(row.model))}/1M`) : 'Unpriced'"></span>
-                </div>
-              </div>
-            </div>
-          </template>
-        </div>
-
-        <!-- Single Load More Button After 100 Models -->
-        <template x-if="paginatedModels.length < rankedModelsByIntelligence.length">
-          <div class="flex items-center justify-center gap-3 pt-4">
-            <span class="text-xs font-mono text-[var(--soft)]">
-              Showing <b class="text-[var(--strong)]" x-text="paginatedModels.length"></b> of <b class="text-[var(--strong)]" x-text="rankedModelsByIntelligence.length"></b>
-            </span>
-            <button @click="loadMoreModels()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-xs" aria-label="Load remaining models">
-              <span>Load all</span>
-              <span class="font-mono font-bold" x-text="`+${rankedModelsByIntelligence.length - paginatedModels.length}`"></span>
-              <svg class="w-3.5 h-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-            </button>
-          </div>
-        </template>
-      </div>
+      <!-- BENTO CARDS VIEW — removed per UX cleanup (table handles mobile via stacked cards) -->
 
       <!-- ========================================================================= -->
       <!-- VIEW 3 & 4: APACHE ECHARTS MULTI-METRIC SCATTER PLOTS & TIMELINE          -->
@@ -735,16 +650,24 @@ import ModelDrawer from './ModelDrawer.astro';
             
             <!-- Plot Sub-Metric Switcher (When on Plot Mode) -->
             <template x-if="modelsViewMode === 'plot'">
-              <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]" role="toolbar" aria-label="Plot metric modes">
-                <template x-for="pMode in PLOT_METRIC_MODES" :key="pMode.id">
-                  <button
-                    @click="plotMetric = pMode.id"
-                    role="button"
-                    :aria-pressed="plotMetric === pMode.id"
-                    class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer"
-                    :class="plotMetric === pMode.id ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'"
-                    x-text="pMode.label"
-                  ></button>
+              <div class="flex flex-wrap items-center gap-2">
+                <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]" role="toolbar" aria-label="Plot metric modes">
+                  <template x-for="pMode in PLOT_METRIC_MODES" :key="pMode.id">
+                    <button
+                      @click="plotMetric = pMode.id"
+                      :aria-pressed="plotMetric === pMode.id"
+                      class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer"
+                      :class="plotMetric === pMode.id ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'"
+                      x-text="pMode.label"
+                    ></button>
+                  </template>
+                </div>
+                <!-- Linear/Log toggle — only for IQ vs Cost -->
+                <template x-if="plotMetric === 'iq-cost'">
+                  <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]" role="toolbar" aria-label="Plot scale">
+                    <button @click="plotScale = 'log'" :aria-pressed="plotScale === 'log'" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer" :class="plotScale === 'log' ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">Log</button>
+                    <button @click="plotScale = 'linear'" :aria-pressed="plotScale === 'linear'" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer" :class="plotScale === 'linear' ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">Linear</button>
+                  </div>
                 </template>
               </div>
             </template>

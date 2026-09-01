@@ -3,7 +3,6 @@ import type { ModelViewMode, PlotMetricMode, PriceRangePreset, CostBasis, Worklo
 
 export const MODEL_VIEW_MODES: Array<{ id: ModelViewMode; label: string; icon: string }> = [
   { id: 'table', label: 'Table', icon: 'icon-list' },
-  { id: 'cards', label: 'Cards', icon: 'icon-grid' },
   { id: 'plot', label: 'Scatter Plots', icon: 'icon-plot' },
   { id: 'timeline', label: 'SOTA Timeline', icon: 'icon-calendar' },
 ];

@@ -58,13 +58,14 @@ export function renderEChartsPlot(
   models: ModelRecord[],
   costBasis: CostBasis = 'blended',
   metricMode: PlotMetricMode = 'iq-cost',
-  isDark = true
+  isDark = true,
+  plotScale: 'log' | 'linear' = 'log'
 ): echarts.EChartsType | undefined {
   if (!containerEl) return;
   if (containerEl.clientWidth === 0 || containerEl.clientHeight === 0) {
     setTimeout(() => {
       if (containerEl.clientWidth > 0 && containerEl.clientHeight > 0) {
-        renderEChartsPlot(containerEl, models, costBasis, metricMode, isDark);
+        renderEChartsPlot(containerEl, models, costBasis, metricMode, isDark, plotScale);
       }
     }, 50);
     return;
@@ -276,6 +277,7 @@ export function renderEChartsPlot(
 
     const validCosts = withCost.map((m) => m.cost).filter((c) => Number.isFinite(c) && c > 0);
     const bounds = getLogAxisBounds(validCosts);
+    const linearMax = validCosts.length ? Math.ceil(Math.max(...validCosts) * 1.15) : 100;
 
     // Frontier should also ignore unpriced models
     const frontier = computeEfficiencyFrontier(models, costBasis);
@@ -346,7 +348,7 @@ export function renderEChartsPlot(
           `;
         },
       },
-      xAxis: {
+      xAxis: plotScale === 'log' ? {
         type: 'log',
         logBase: 10,
         name: 'Cost per 1M tokens ($, log scale)',
@@ -355,6 +357,17 @@ export function renderEChartsPlot(
         nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
         min: bounds.min,
         max: bounds.max,
+        axisLabel: { color: themeColors.subText, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, formatter: (val: any) => `$${val}` },
+        axisLine: { lineStyle: { color: themeColors.axisLine } },
+        splitLine: { lineStyle: { color: themeColors.gridLine, type: 'dashed' } },
+      } : {
+        type: 'value',
+        name: 'Cost per 1M tokens ($, linear)',
+        nameLocation: 'middle',
+        nameGap: 34,
+        nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
+        min: 0,
+        max: linearMax,
         axisLabel: { color: themeColors.subText, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, formatter: (val: any) => `$${val}` },
         axisLine: { lineStyle: { color: themeColors.axisLine } },
         splitLine: { lineStyle: { color: themeColors.gridLine, type: 'dashed' } },
