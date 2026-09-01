@@ -62,8 +62,11 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
 
     const price1mInput = typeof rawPriceInput === 'number' ? Math.round(rawPriceInput * 100) / 100 : null;
     const price1mOutput = typeof rawPriceOutput === 'number' ? Math.round(rawPriceOutput * 100) / 100 : null;
-    const price1mCacheRead = typeof rawPriceCacheRead === 'number' ? Math.round(rawPriceCacheRead * 100) / 100 : null;
-    const price1mBatch = typeof rawPriceBatch === 'number' ? Math.round(rawPriceBatch * 100) / 100 : null;
+    // Derive cache/batch from input when absent to avoid -- in UI (matches src/utils/pricing.ts fallback)
+    let price1mCacheRead = typeof rawPriceCacheRead === 'number' ? Math.round(rawPriceCacheRead * 100) / 100 : null;
+    let price1mBatch = typeof rawPriceBatch === 'number' ? Math.round(rawPriceBatch * 100) / 100 : null;
+    if (price1mCacheRead == null && price1mInput != null) price1mCacheRead = Math.round(price1mInput * 0.25 * 100) / 100;
+    if (price1mBatch == null && price1mInput != null) price1mBatch = Math.round(price1mInput * 0.5 * 100) / 100;
 
     // Intelligence & Benchmark sub-indices (keep absent telemetry as null)
     const intelligence = typeof rec.evaluations?.artificial_analysis_intelligence_index === 'number'

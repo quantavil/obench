@@ -1,6 +1,6 @@
 # OBench
 
-OBench is an open-source, high-performance intelligence and token pricing workbench for AI language models, powered by benchmark telemetry from Artificial Analysis.
+Open-source intelligence and token pricing workbench for AI language models. Benchmark telemetry from **Artificial Analysis**, live pricing/context from **OpenRouter**.
 
 Built with TypeScript, Astro, Hono, Tailwind CSS v4, Alpine.js, and Apache ECharts.
 
@@ -8,163 +8,81 @@ Built with TypeScript, Astro, Hono, Tailwind CSS v4, Alpine.js, and Apache EChar
 
 ## Features
 
-- **Neutral Precision Workbench**: Professional typography, neutral palette with a restrained signal accent (`#c8ff00` electric lime), and dense data display tailored for engineers and researchers.
-- **High-Density Model Explorer**: Explore 600+ LLMs with real-time Quality (IQ), Coding index, throughput speed (tokens/sec), first-token latency (TTFT), context window limits, and token pricing.
-- **Rigorous Cost Semantics**: Clear distinction between free models (`Free` / `$0.00`) and unpriced/unreported models (`--` / `Unpriced`).
-- **Modular Lazy-Loaded Charts**: Apache ECharts modular SVG scatter plots and SOTA progression timeline dynamically loaded on demand, keeping the initial JS bundle under 260 KB (< 700 KB budget).
-- **Multi-Metric Scatter Plots & Pareto Frontier**: Interactive scatter plots for Quality vs Cost (with Pareto efficiency frontier), Quality vs Speed (TPS), and Latency (TTFT) vs Throughput.
-- **SOTA Timeline Progression**: Chronological state-of-the-art advancement staircase tracking frontier breakthroughs over time.
-- **Side-by-Side Comparator (VS)**: Direct spec matrix comparing up to 4 models simultaneously, including IQ deltas and simulated 100k query cost projections.
-- **Workload Cost Simulator**: Model inspector with presets for Chat, Autonomous Agents, RAG pipelines, and Batch processing, complete with Prompt Caching and Batch API discount toggles.
-- **Accessible & Responsive**: Keyboard-first navigation, ARIA sorting, focus trapping & restoration, and responsive layouts across desktop, tablet, and mobile with compliant touch targets (>= 38px).
-- **Universal Hono API**: Unified web-standard API running locally on Bun and deployed seamlessly on Cloudflare Pages Functions.
-- **Zero-Database Serverless Architecture**: Instant offline startup via bundled dataset, with server-side live synchronization from Artificial Analysis using Cloudflare environment variables.
+- **Neutral Precision Workbench**: neutral palette with restrained accent `#c8ff00` (lime), dense data display for engineers.
+- **759 Models**: 611 AA benchmarked + 148 OpenRouter-only (pricing/context only, `intelligence:null` excluded from charts).
+- **Live Pricing Merge**: `scripts/merge-openrouter.mjs` fetches `GET https://openrouter.ai/api/v1/models`, converts per-token `*1e6` pricing, enriches AA cache/batch/context/modalities. AA `--` + OR `0.01` → picks OR; `0` (`Free`) and `null` (`--`) both excluded from IQ vs Cost frontier (`frontier.ts:18` `cost>0`).
+- **Benchmark Preservation**: `AA sync` (`/api/sync`) merges live AA but keeps previous `coding/math/reasoning/speed` when live returns `null` (`appStore.ts:803`).
+- **Pricing Fallbacks**: cache `0.25×input`, batch `0.5×input` when absent (matches `pricing.ts:3`), so table never shows `--` when derivable.
+- **Charts**: lazy-loaded ECharts SVG scatter (IQ vs Cost with Pareto frontier, IQ vs Speed, TTFT vs Speed) and SOTA timeline staircase, `~317K` initial JS.
+- **Comparator & Simulator**: VS matrix (Δ IQ, 100k cost) + workload presets (Chat/Agent/RAG/Batch) with caching/batch toggles.
+- **Accessible, responsive**: keyboard, ARIA, focus trap, `>=38px` touch targets.
+- **Hono API** on Bun + Cloudflare Pages Functions, zero-DB, bundled dataset.
 
 ---
 
 ## Project Structure
 
 ```
-.
-├── src/
-│   ├── charts/
-│   │   └── echartsRender.ts    # Modular Apache ECharts scatter plot & SOTA timeline renderers
-│   ├── components/
-│   │   ├── Header.astro        # Top navigation bar with ⌘K search & live sync trigger
-│   │   ├── TabModels.astro     # Explorer views (Table, Cards, Scatter Plots, Timeline, Compare)
-│   │   ├── ModelDrawer.astro   # In-place desktop side panel & mobile slide-over inspector sheet
-│   │   ├── MobileNav.astro     # Responsive floating mobile navigation bar
-│   │   ├── Toast.astro         # Real-time status notifications
-│   │   └── Icons.astro         # Reusable SVG icon symbols
-│   ├── data/
-│   │   └── models.json         # Pre-bundled dataset (600+ models with full telemetry)
-│   ├── pages/
-│   │   └── index.astro         # Astro root application entrypoint
-│   ├── server/
-│   │   └── app.ts              # Universal Hono API application
-│   ├── store/
-│   │   ├── appStore.ts         # Alpine.js reactive client workbench store
-│   │   ├── compare.ts          # Comparison logic & winner computations
-│   │   ├── config.ts           # Presets, price brackets, and capability filters
-│   │   └── inspector.ts        # Focus trapping and scroll-lock management
-│   ├── styles/
-│   │   └── index.css           # Design tokens, themes (dark/light), and custom styles
-│   ├── types/
-│   │   └── model.ts            # Strict TypeScript interfaces & schema definitions
-│   └── utils/
-│       ├── aaNormalize.ts      # Telemetry normalizer for Artificial Analysis records
-│       ├── aaSync.ts           # Server synchronization client helper
-│       ├── formatters.ts       # Compact date, currency, and numerical formatters
-│       ├── frontier.ts         # Pareto efficiency frontier & SOTA progression algorithms
-│       ├── pricing.ts          # Blended and effective token pricing formulas
-│       └── providers.ts        # Creator brand colors and vector logos
-├── functions/
-│   └── [[route]].ts            # Cloudflare Pages Functions adapter wrapping Hono
-├── scripts/
-│   ├── verify_ui.py            # Playwright automated UI verification & screenshot suite
-│   └── screenshots/            # Verified multi-viewport screenshots
-├── tests/                      # Bun test suites (100% TypeScript)
-│   ├── aaNormalize.test.ts
-│   ├── charts.test.ts
-│   ├── formatters.test.ts
-│   ├── server.test.ts
-│   ├── store.test.ts
-│   └── uiMarkup.test.ts
-├── astro.config.mjs
-├── knip.json                   # Dead code and unused export validation config
-├── package.json
-├── tsconfig.json
-└── README.md
+src/
+  charts/echartsRender.ts    # ECharts scatter + SOTA timeline
+  components/Header.astro, TabModels.astro, ModelDrawer.astro, MobileNav.astro, Toast.astro
+  data/models.json           # 759 models (pretty 2-space, not minified)
+  pages/index.astro
+  server/app.ts, aaService.ts
+  store/appStore.ts, compare.ts, config.ts, inspector.ts
+  styles/index.css
+  types/model.ts
+  utils/aaNormalize.ts, pricing.ts, frontier.ts, formatters.ts, providers.ts, aaSync.ts
+scripts/
+  merge-openrouter.mjs       # live OR merge (keep IQ, update pricing/context)
+  verify_ui.py               # Playwright bundle + viewport checks
+tests/                       # bun test (aaNormalize, charts, formatters, server, store, uiMarkup)
 ```
 
 ---
 
 ## Getting Started
 
-### Prerequisites
-
-- [Bun](https://bun.sh) (v1.1+ recommended)
-- [Python 3](https://python.org) (v3.10+ for Playwright UI verification)
-
-### Installation
-
-Clone the repository and install dependencies:
-
 ```bash
 git clone https://github.com/username/obench.git
 cd obench
 bun install
+bun run dev # http://localhost:4321
 ```
 
-### Development Server
-
-Start the local development server:
+### Scripts
 
 ```bash
-bun run dev
-```
-
-Open `http://localhost:4321` in your browser.
-
----
-
-## Testing & Verification Suite
-
-OBench includes a full automated test matrix covering units, integrations, type safety, bundle sizes, accessibility, and multi-viewport rendering:
-
-```bash
-# 1. Run unit and integration test suites (55+ tests)
+bun scripts/merge-openrouter.mjs          # merge live OR pricing
+bun scripts/merge-openrouter.mjs --dry-run
 bun test
-
-# 2. Astro project diagnostic checks
 bun run check
-
-# 3. TypeScript strict type checks
 bun x tsc --noEmit
-
-# 4. Dead code and unused export scanner
 bun x knip
-
-# 5. Production build (Vite + Astro)
 bun run build
-
-# 6. Bundle budget & multi-viewport Playwright browser verification
 python3 scripts/verify_ui.py
 ```
 
-### Bundle Size Budget
+---
 
-- Entry JS Chunk Budget: `< 700 KB`
-- Measured Initial Chunk: `~257 KB` (modular ECharts loaded asynchronously upon chart view activation)
+## API
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/health` | health + `AA_API_KEY` check |
+| `GET` | `/api/models` | bundled `models.json` |
+| `POST` | `/api/sync` | live AA paginated normalize (`AA_API_KEY` env) |
+| `POST` | `/api/test-aa` | validate AA key |
 
 ---
 
 ## Deployment (Cloudflare Pages)
 
-OBench is designed for zero-config deployment on Cloudflare Pages:
-
-1. Connect your repository in the **Cloudflare Pages Dashboard**.
-2. Set the build settings:
-   - **Framework preset**: Astro
-   - **Build command**: `bun run build`
-   - **Build output directory**: `dist`
-3. Add your environment variable (optional, for live sync):
-   - **Settings** > **Environment Variables** > Add `AA_API_KEY` with your Artificial Analysis API key.
-4. Deploy! All API routes under `/api/*` are handled by Cloudflare Pages Functions via Hono.
-
----
-
-## API Reference
-
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Service health status and API key configuration check |
-| `GET` | `/api/models` | Returns bundled model records with full telemetry |
-| `POST` | `/api/sync` | Fetches, paginates, and normalizes live data from Artificial Analysis using `AA_API_KEY` |
-| `POST` | `/api/test-aa` | Validates API connectivity with Artificial Analysis |
+1. Framework: Astro, Build `bun run build`, Output `dist`
+2. Env `AA_API_KEY` for live sync
 
 ---
 
 ## License
 
-MIT
+MIT — see `LICENSE`.

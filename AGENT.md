@@ -1,45 +1,29 @@
 # Project: OBench
 
-Open-source AI intelligence, benchmark, and token pricing workbench powered by Artificial Analysis telemetry.
+AI intelligence + pricing workbench. AA benchmarks + live OpenRouter pricing.
 
 ## Structure
-- `src/pages/index.astro`: Main page layout entrypoint (Header, TabModels, ModelDrawer, MobileNav, Toast).
-- `src/components/Header.astro`: Top navigation bar with ⌘K search, Compare toggle pill, live sync button, and dynamic theme switcher.
-- `src/components/TabModels.astro`: Model workbench (Creator filters; Table, Cards, Scatter Plots, SOTA Timeline, Compare matrix).
-- `src/components/ModelDrawer.astro`: In-place desktop docked side panel & mobile slide-over sheet with workload cost simulator.
-- `src/components/MobileNav.astro`: Floating bottom navigation pill with WCAG compliant touch targets (>= 38px).
-- `src/components/Toast.astro`: Severity-aware reactive notification toasts (`info`, `success`, `warning`, `error`).
-- `src/components/Icons.astro`: Centralized SVG sprite symbols repository (strict zero-emoji policy).
-- `src/server/app.ts`: Universal Hono API server (`/api/health`, `/api/models`, `/api/test-aa`, `/api/sync`).
-- `functions/[[route]].ts`: Cloudflare Pages Functions adapter wrapping Hono.
-- `src/charts/echartsRender.ts`: Modular Apache ECharts SVG scatter plot with Pareto Frontier and SOTA timeline.
-- `src/store/appStore.ts`: Alpine client workbench store with lazy-loaded chart boundary and reactive theme/filter state.
-- `src/store/compare.ts`: Side-by-side model comparison matrix and metric delta winner computations.
-- `src/store/inspector.ts`: Viewport-aware focus trapping, focus restoration, and body scroll lock management.
-- `src/utils/pricing.ts`: Blended (3:1) and effective token pricing formulas with discount simulation.
-- `src/utils/aaNormalize.ts`: Normalizer for Artificial Analysis full telemetry records.
-- `src/utils/frontier.ts`: Pareto efficiency frontier and SOTA milestone advancement algorithms.
-- `src/utils/formatters.ts`: Compact date, currency, and score formatters (distinguishing `Free` from `--`).
-- `src/utils/providers.ts`: Provider colors and SVG symbol references (`#icon-provider-*`).
-- `scripts/verify_ui.py`: Playwright multi-viewport UI verification & bundle size (< 700KB) assertion suite.
-- `tests/`: Pure TypeScript `bun test` suites (`aaNormalize`, `charts`, `formatters`, `server`, `store`, `uiMarkup`).
+- `src/pages/index.astro`: layout (Header, TabModels, ModelDrawer, MobileNav)
+- `src/components/*`: Header sync, TabModels explorer (table/cards/plot/timeline/compare), ModelDrawer simulator
+- `src/server/app.ts`: Hono API `/api/health|models|test-aa|sync`
+- `src/server/aaService.ts`: paginated AA fetch (`MAX_SYNC_PAGES 25`, `MAX_RECORDS 10000`)
+- `src/utils/aaNormalize.ts`: normalize AA records, derives cache `0.25*input`, batch `0.5*input` when absent, keeps `null` for missing IQ
+- `src/utils/pricing.ts`: `cachedInput`/`batchInput`/`calculateModelCost` (blended 3:1)
+- `src/utils/frontier.ts`: `computeEfficiencyFrontier` filters `cost>0` (0/null → -- excluded), `computeSotaProgression`
+- `src/utils/formatters.ts`: `fmtCost(null→--,0→Free)`, `fmt1`, `fmtDate`
+- `src/store/appStore.ts`: Alpine store, `syncModels` merges prev benchmarks when live returns null, `mountCurrentChart` lazy-loads ECharts
+- `src/charts/echartsRender.ts`: modular ECharts SVG, log cost axis, frontier dashed
+- `src/data/models.json`: 759 pretty-printed (611 AA + 148 OR-only, `intelligence:null` excluded from charts)
+- `scripts/merge-openrouter.mjs`: live OR merge — slug `normLast`, suffix-strip, longest-contains match; enrich pricing/context/modalities, add OR-only, derive cache/batch fallback, filter negative pricing, sort IQ desc
+- `scripts/verify_ui.py`: Playwright bundle `<700KB` + viewport checks
+- `tests/`: bun test
 
-## Architecture & Commands
-- Dev server: `bun run dev` (starts local Astro dev server at `http://localhost:4321`).
-- Production build: `bun run build` (compiles static bundle into `/dist`).
-- Preview server: `bun x astro preview --port 4399 --host 127.0.0.1`
-- Type-check: `bun x tsc --noEmit`
-- Project diagnostic check: `bun run check`
-- Dead code / unused exports: `bun x knip`
-- Unit/Integration tests: `bun test` (runs 55+ tests across 6 suites).
-- Browser UI Verification: `python3 scripts/verify_ui.py` (checks bundle size budget, viewport layouts, and a11y).
-- Cloudflare Pages: API key `AA_API_KEY` configured in server environment variables.
+## Commands
+- `bun run dev` → http://localhost:4321
+- `bun scripts/merge-openrouter.mjs [--dry-run]`
+- `bun test` (55 tests), `bun run check`, `bun x tsc --noEmit`, `bun x knip`, `bun run build`, `python3 scripts/verify_ui.py`
 
-## Non-obvious Discoveries
-- Alpine re-evaluates getters on every binding read; cache expensive model filters and update via `$watch` on joined filter keys.
-- `backdrop-filter` is expensive on mobile; limit to fixed sticky surfaces (`header`, `drawer`) and avoid on repeating table rows.
-- Select elements need `appearance-none` and `.field-select` custom styling to prevent native browser focus ring double borders.
-- Drawer open locks body scroll (`document.body.style.overflow = 'hidden'`) only for mobile viewports (< 1024px); desktop remains docked.
-- ECharts is dynamically imported via modular subpaths (`echarts/core`, `echarts/charts`, `echarts/components`, `echarts/renderers`), reducing initial JS bundle from ~1.39MB to ~257KB.
-- Modular ECharts subpaths should be declared in `vite.optimizeDeps.include` in `astro.config.mjs` to avoid runtime dynamic pre-bundling latency.
-- Playwright tests against Astro preview servers should use `astro preview` with a dedicated port (e.g. 4399) to avoid colliding with active dev servers.
+## Notes
+- Sync preserves benchmarks: live `null` coding/math/reasoning/speed keeps previous value.
+- Pricing: AA `-- (null)` + OR `0.01` → picks OR live; `0` Free excluded from frontier.
+- Docs folder removed; source JSON stays pretty (2-space) for git diff, dist is minified/gzipped.

@@ -15,7 +15,8 @@ export function computeEfficiencyFrontier(
       const costVal = calculateModelCost(m, costBasis);
       return { ...m, cost: costVal };
     })
-    .filter((m): m is ModelRecord & { cost: number } => m.cost !== null && m.cost >= 0);
+    // 0 and null both render as -- and must be excluded from IQ vs Cost
+    .filter((m): m is ModelRecord & { cost: number } => m.cost !== null && m.cost > 0);
 
   // Sort cheapest first. If costs match, higher IQ first.
   const sorted = [...withCost].sort((a, b) => a.cost - b.cost || (b.intelligence ?? 0) - (a.intelligence ?? 0));

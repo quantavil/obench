@@ -807,15 +807,34 @@ export function bench() {
       try {
         const models = await fetchAaModels();
         if (Array.isArray(models) && models.length > 0) {
-          this.data.models = models;
+          // Preserve benchmark telemetry when live AA returns null (stale sparse evals) - merge with previous data
+          const prevById = new Map((this.data.models || []).map((m: any) => [m.id, m]));
+          const merged = models.map((m: any) => {
+            const prev = prevById.get(m.id);
+            if (!prev) return m;
+            return {
+              ...m,
+              codingIndex: m.codingIndex ?? prev.codingIndex ?? null,
+              mathIndex: m.mathIndex ?? prev.mathIndex ?? null,
+              reasoningIndex: m.reasoningIndex ?? prev.reasoningIndex ?? null,
+              speedTps: m.speedTps ?? prev.speedTps ?? null,
+              latencyTtft: m.latencyTtft ?? prev.latencyTtft ?? null,
+              contextWindow: m.contextWindow ?? prev.contextWindow ?? null,
+              maxOutputTokens: m.maxOutputTokens ?? prev.maxOutputTokens ?? null,
+              // pricing falls back via aaNormalize derived, but keep prev if live is null
+              price1mCacheRead: m.price1mCacheRead ?? prev.price1mCacheRead ?? null,
+              price1mBatch: m.price1mBatch ?? prev.price1mBatch ?? null,
+            };
+          });
+          this.data.models = merged;
           this.data.lastSyncedAt = Date.now();
           try {
-            localStorage.setItem('bench-models', JSON.stringify(models));
+            localStorage.setItem('bench-models', JSON.stringify(merged));
             localStorage.setItem('bench-last-synced', String(this.data.lastSyncedAt));
           } catch (e) {
             console.warn('localStorage quota exceeded, skipping persist', e);
           }
-          this.toast(`Synced ${models.length} models successfully!`, 'success');
+          this.toast(`Synced ${merged.length} models successfully!`, 'success');
           this.updateModelRows();
           this.$nextTick(() => {
             this.mountCurrentChart();
