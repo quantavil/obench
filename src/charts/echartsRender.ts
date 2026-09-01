@@ -98,7 +98,7 @@ export function renderEChartsPlot(
   let option: any = {};
 
   if (metricMode === 'iq-speed') {
-    // ---------------------------------------------------- IQ vs Speed (TPS)
+    // ---------------------------------------------------- IQ vs Speed (TPS) — X scale respects Log/Linear toggle
     const valid = scored.filter((m) => typeof m.speedTps === 'number' && m.speedTps > 0);
     const scatterData = valid.map((m) => ({
       name: m.name,
@@ -111,6 +111,9 @@ export function renderEChartsPlot(
         shadowBlur: 3,
       },
     }));
+    const speedVals = valid.map((m) => m.speedTps as number);
+    const speedBounds = getLogAxisBounds(speedVals);
+    const speedLinearMax = speedVals.length ? Math.ceil(Math.max(...speedVals) * 1.15) : 200;
 
     option = {
       aria: { enabled: true },
@@ -148,12 +151,26 @@ export function renderEChartsPlot(
           `;
         },
       },
-      xAxis: {
+      xAxis: plotScale === 'log' ? {
+        type: 'log',
+        logBase: 10,
+        name: 'Output Speed (tokens / second, log scale)',
+        nameLocation: 'middle',
+        nameGap: 34,
+        nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
+        min: speedBounds.min,
+        max: speedBounds.max,
+        axisLabel: { color: themeColors.subText, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, formatter: '{value} tps' },
+        axisLine: { lineStyle: { color: themeColors.axisLine } },
+        splitLine: { lineStyle: { color: themeColors.gridLine, type: 'dashed' } },
+      } : {
         type: 'value',
         name: 'Output Speed (tokens / second)',
         nameLocation: 'middle',
         nameGap: 34,
         nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
+        min: 0,
+        max: speedLinearMax,
         axisLabel: { color: themeColors.subText, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, formatter: '{value} tps' },
         axisLine: { lineStyle: { color: themeColors.axisLine } },
         splitLine: { lineStyle: { color: themeColors.gridLine, type: 'dashed' } },
@@ -169,7 +186,7 @@ export function renderEChartsPlot(
         axisLine: { lineStyle: { color: themeColors.axisLine } },
         splitLine: { lineStyle: { color: themeColors.gridLine } },
       },
-      dataZoom: [{ type: 'inside', xAxisIndex: [0] }],
+      dataZoom: [{ type: 'inside', xAxisIndex: [0], yAxisIndex: [0], filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, preventDefaultMouseMove: true, minSpan: 8, maxSpan: 100 }],
       series: [
         {
           name: 'Models',
@@ -181,8 +198,8 @@ export function renderEChartsPlot(
       ],
     };
   } else if (metricMode === 'ttft-speed') {
-    // ---------------------------------------------------- Latency (TTFT) vs Throughput (TPS)
-    const valid = scored.filter((m) => typeof m.speedTps === 'number' && typeof m.latencyTtft === 'number');
+    // ---------------------------------------------------- Latency (TTFT) vs Throughput (TPS) — X respects Log/Linear
+    const valid = scored.filter((m) => typeof m.speedTps === 'number' && typeof m.latencyTtft === 'number' && (m.latencyTtft as number) > 0);
     const scatterData = valid.map((m) => ({
       name: m.name,
       value: [m.latencyTtft, m.speedTps],
@@ -194,6 +211,9 @@ export function renderEChartsPlot(
         shadowBlur: 3,
       },
     }));
+    const ttftVals = valid.map((m) => m.latencyTtft as number);
+    const ttftBounds = getLogAxisBounds(ttftVals);
+    const ttftLinearMax = ttftVals.length ? Math.ceil(Math.max(...ttftVals) * 1.15) : 5;
 
     option = {
       aria: { enabled: true },
@@ -228,12 +248,26 @@ export function renderEChartsPlot(
           `;
         },
       },
-      xAxis: {
+      xAxis: plotScale === 'log' ? {
+        type: 'log',
+        logBase: 10,
+        name: 'Time to First Token (seconds, log scale)',
+        nameLocation: 'middle',
+        nameGap: 34,
+        nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
+        min: ttftBounds.min,
+        max: ttftBounds.max,
+        axisLabel: { color: themeColors.subText, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, formatter: '{value}s' },
+        axisLine: { lineStyle: { color: themeColors.axisLine } },
+        splitLine: { lineStyle: { color: themeColors.gridLine, type: 'dashed' } },
+      } : {
         type: 'value',
         name: 'Time to First Token (seconds, lower is better)',
         nameLocation: 'middle',
         nameGap: 34,
         nameTextStyle: { color: themeColors.subText, fontSize: 11, fontFamily: 'JetBrains Mono, monospace' },
+        min: 0,
+        max: ttftLinearMax,
         axisLabel: { color: themeColors.subText, fontFamily: 'JetBrains Mono, monospace', fontSize: 10, formatter: '{value}s' },
         axisLine: { lineStyle: { color: themeColors.axisLine } },
         splitLine: { lineStyle: { color: themeColors.gridLine, type: 'dashed' } },
@@ -249,7 +283,7 @@ export function renderEChartsPlot(
         axisLine: { lineStyle: { color: themeColors.axisLine } },
         splitLine: { lineStyle: { color: themeColors.gridLine } },
       },
-      dataZoom: [{ type: 'inside', xAxisIndex: [0] }],
+      dataZoom: [{ type: 'inside', xAxisIndex: [0], yAxisIndex: [0], filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, preventDefaultMouseMove: true, minSpan: 8, maxSpan: 100 }],
       series: [
         {
           name: 'Models',
@@ -383,7 +417,7 @@ export function renderEChartsPlot(
         axisLine: { lineStyle: { color: themeColors.axisLine } },
         splitLine: { lineStyle: { color: themeColors.gridLine } },
       },
-      dataZoom: [{ type: 'inside', xAxisIndex: [0] }],
+      dataZoom: [{ type: 'inside', xAxisIndex: [0], yAxisIndex: [0], filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, preventDefaultMouseMove: true, minSpan: 8, maxSpan: 100 }],
       series: [
         {
           name: 'Pareto Frontier',
@@ -537,7 +571,7 @@ export function renderEChartsTimeline(
       axisLine: { lineStyle: { color: themeColors.axisLine } },
       splitLine: { lineStyle: { color: themeColors.gridLine } },
     },
-    dataZoom: [{ type: 'inside', xAxisIndex: [0] }],
+    dataZoom: [{ type: 'inside', xAxisIndex: [0], yAxisIndex: [0], filterMode: 'none', zoomOnMouseWheel: true, moveOnMouseMove: true, preventDefaultMouseMove: true, minSpan: 10, maxSpan: 100 }],
     series: [
       {
         name: 'SOTA Progression',

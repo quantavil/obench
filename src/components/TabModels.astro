@@ -647,27 +647,17 @@ import ModelDrawer from './ModelDrawer.astro';
       >
         <div class="glass-soft rounded-xl p-4 sm:p-6 overflow-hidden shadow-xs">
           <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--hair)] mb-3">
-            
             <!-- Plot Sub-Metric Switcher (When on Plot Mode) -->
             <template x-if="modelsViewMode === 'plot'">
-              <div class="flex flex-wrap items-center gap-2">
-                <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]" role="toolbar" aria-label="Plot metric modes">
-                  <template x-for="pMode in PLOT_METRIC_MODES" :key="pMode.id">
-                    <button
-                      @click="plotMetric = pMode.id"
-                      :aria-pressed="plotMetric === pMode.id"
-                      class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer"
-                      :class="plotMetric === pMode.id ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'"
-                      x-text="pMode.label"
-                    ></button>
-                  </template>
-                </div>
-                <!-- Linear/Log toggle — only for IQ vs Cost -->
-                <template x-if="plotMetric === 'iq-cost'">
-                  <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]" role="toolbar" aria-label="Plot scale">
-                    <button @click="plotScale = 'log'" :aria-pressed="plotScale === 'log'" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer" :class="plotScale === 'log' ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">Log</button>
-                    <button @click="plotScale = 'linear'" :aria-pressed="plotScale === 'linear'" class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer" :class="plotScale === 'linear' ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">Linear</button>
-                  </div>
+              <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)] max-w-full overflow-x-auto scroll-slim" role="toolbar" aria-label="Plot metric modes">
+                <template x-for="pMode in PLOT_METRIC_MODES" :key="pMode.id">
+                  <button
+                    @click="plotMetric = pMode.id"
+                    :aria-pressed="plotMetric === pMode.id"
+                    class="px-2.5 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer whitespace-nowrap shrink-0"
+                    :class="plotMetric === pMode.id ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'"
+                    x-text="pMode.label"
+                  ></button>
                 </template>
               </div>
             </template>
@@ -680,11 +670,21 @@ import ModelDrawer from './ModelDrawer.astro';
               </div>
             </template>
 
-            <div class="flex items-center gap-3 text-xs font-mono text-[var(--soft)]">
+            <div class="flex items-center gap-3 text-xs font-mono text-[var(--soft)] shrink-0">
               <span class="hidden sm:inline text-[var(--muted)]">Scrollwheel / pinch to zoom</span>
               <span class="font-bold text-[var(--strong)]" x-text="`${filteredModels.length} plotted`"></span>
             </div>
           </div>
+          <!-- Scale toggle — separate row so metric switcher + zoom hint fit on narrow screens; shown for all scatter plots (not timeline) -->
+          <template x-if="modelsViewMode === 'plot'">
+            <div class="flex items-center justify-between gap-3 pb-3 mb-3 border-b border-[var(--hair)]">
+              <span class="text-xs font-mono text-[var(--muted)]">X-axis scale</span>
+              <div class="inline-flex rounded-lg p-0.5 bg-[var(--chip-bg)] border border-[var(--glass-brd)]" role="toolbar" aria-label="Plot scale">
+                <button @click="plotScale = 'log'" :aria-pressed="plotScale === 'log'" class="px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer" :class="plotScale === 'log' ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">Log</button>
+                <button @click="plotScale = 'linear'" :aria-pressed="plotScale === 'linear'" class="px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer" :class="plotScale === 'linear' ? 'bg-[var(--glass-bg-hi)] text-[var(--strong)] shadow-xs font-bold' : 'text-[var(--soft)] hover:text-[var(--strong)]'">Linear</button>
+              </div>
+            </div>
+          </template>
 
           <!-- ECharts Mount Element Wrapped in Accessible Figure -->
           <figure class="w-full relative" role="region" aria-label="Model benchmark distribution chart">
