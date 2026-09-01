@@ -168,7 +168,7 @@ import ModelDrawer from './ModelDrawer.astro';
 
   <!-- Compare Selection & Apply Action Banner (Visible when VS Mode is ON) -->
   <template x-if="showCompareCol && modelsViewMode === 'table'">
-    <div class="glass-soft rounded-xl p-3 px-4 border border-[var(--accent)]/40 flex flex-wrap items-center justify-between gap-3 shadow-xs transition-all">
+    <div class="glass-soft rounded-xl p-3 px-4 ring-1 ring-[var(--accent)]/30 flex flex-wrap items-center justify-between gap-3 shadow-xs transition-all">
       <div class="flex items-center gap-2">
         <span class="w-2 h-2 rounded-full bg-[var(--accent)] animate-pulse"></span>
         <span class="text-xs font-semibold text-[var(--strong)]">Pick Models to Compare:</span>
@@ -242,7 +242,7 @@ import ModelDrawer from './ModelDrawer.astro';
         x-show="modelsViewMode === 'table'"
       >
         <template x-if="rankedModelsByIntelligence.length === 0">
-          <div class="glass-soft rounded-xl p-12 text-center border border-[var(--glass-brd)]">
+          <div class="glass-soft rounded-xl p-12 text-center">
             <p class="text-sm text-[var(--soft)] font-medium">No models match your search or active filters.</p>
             <button @click="clearFilters()" class="btn btn-secondary px-4 py-2 text-xs mt-3 cursor-pointer">
               Clear all filters
@@ -730,7 +730,7 @@ import ModelDrawer from './ModelDrawer.astro';
         x-show="modelsViewMode === 'plot' || modelsViewMode === 'timeline'"
         class="space-y-4"
       >
-        <div class="glass-soft rounded-xl p-4 sm:p-6 border border-[var(--glass-brd)] overflow-hidden shadow-xs">
+        <div class="glass-soft rounded-xl p-4 sm:p-6 overflow-hidden shadow-xs">
           <div class="flex flex-wrap items-center justify-between gap-3 pb-3 border-b border-[var(--hair)] mb-3">
             
             <!-- Plot Sub-Metric Switcher (When on Plot Mode) -->
@@ -772,7 +772,7 @@ import ModelDrawer from './ModelDrawer.astro';
 
         <!-- Optimal SOTA / Frontier Models Grid as Accessible Keyboard Summary -->
         <template x-if="optimalModels.length > 0">
-          <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-4 shadow-xs" role="region" aria-label="Frontier and SOTA summary">
+          <div class="glass-soft rounded-xl p-5 space-y-4 shadow-xs" role="region" aria-label="Frontier and SOTA summary">
             <div class="flex items-center justify-between border-b border-[var(--hair)] pb-3">
               <div class="flex items-center gap-2">
                 <span class="px-2.5 py-0.5 rounded-full iq-badge font-mono font-bold text-xs flex items-center gap-1.5">
@@ -837,7 +837,7 @@ import ModelDrawer from './ModelDrawer.astro';
         x-show="modelsViewMode === 'compare'"
         class="space-y-4"
       >
-        <div class="glass-soft rounded-xl p-5 border border-[var(--glass-brd)] space-y-5 shadow-xs">
+        <div class="glass-soft rounded-xl p-5 space-y-5 shadow-xs">
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-[var(--hair)] pb-4">
             <div>
               <div class="flex items-center gap-2">
