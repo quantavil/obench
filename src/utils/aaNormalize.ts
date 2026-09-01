@@ -75,13 +75,17 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
       ? rec.intelligence
       : null;
 
-    const codingIndex = typeof rec.evaluations?.coding_index === 'number'
+    const codingIndex = typeof rec.evaluations?.artificial_analysis_coding_index === 'number'
+      ? rec.evaluations.artificial_analysis_coding_index
+      : typeof rec.evaluations?.coding_index === 'number'
       ? rec.evaluations.coding_index
       : typeof rec.codingIndex === 'number'
       ? rec.codingIndex
       : null;
 
-    const mathIndex = typeof rec.evaluations?.math_index === 'number'
+    const mathIndex = typeof rec.evaluations?.artificial_analysis_math_index === 'number'
+      ? rec.evaluations.artificial_analysis_math_index
+      : typeof rec.evaluations?.math_index === 'number'
       ? rec.evaluations.math_index
       : typeof rec.mathIndex === 'number'
       ? rec.mathIndex
@@ -89,6 +93,10 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
 
     const reasoningIndex = typeof rec.evaluations?.reasoning_index === 'number'
       ? rec.evaluations.reasoning_index
+      : typeof rec.evaluations?.gpqa === 'number'
+      ? Math.round(rec.evaluations.gpqa * 100 * 10) / 10
+      : typeof rec.evaluations?.artificial_analysis_reasoning_index === 'number'
+      ? rec.evaluations.artificial_analysis_reasoning_index
       : typeof rec.reasoningIndex === 'number'
       ? rec.reasoningIndex
       : null;
