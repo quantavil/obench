@@ -6,9 +6,6 @@
 .wrangler/
 .mf/
 
-# KV-backed dataset - single source of truth is Cloudflare KV, not bundled json
-# Local file is generated lazily (daily auto-refresh) and not committed
-src/data/models.json
 
 # OS / editor cruft
 .DS_Store
@@ -18,4 +15,5 @@ node_modules/
 dist/
 .astro/
 
-
+# Test artifacts
+scripts/screenshots/

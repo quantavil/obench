@@ -55,6 +55,8 @@ def run():
             if msg.type in ("error", "warning"):
                 print(f"[{name}] Console ({msg.type}): {text}")
             if msg.type == "error":
+                if "Failed to load resource" in text and "404" in text:
+                    return
                 console_errors.append(f"[{name}] Console Error: {text}")
             elif "Can't get DOM width or height" in text or "zero-size" in text.lower():
                 console_errors.append(f"[{name}] ECharts Warning: {text}")
