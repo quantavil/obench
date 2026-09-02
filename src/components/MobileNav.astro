@@ -6,7 +6,7 @@
       :aria-pressed="modelsViewMode === 'table'"
       aria-label="Table View"
       class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'table' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
+      :class="modelsViewMode === 'table' ? 'bg-[var(--accent)] text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-list" /></svg>
       <span>Table</span>
@@ -17,7 +17,7 @@
       :aria-pressed="modelsViewMode === 'plot'"
       aria-label="Scatter Plots View"
       class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'plot' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
+      :class="modelsViewMode === 'plot' ? 'bg-[var(--accent)] text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-plot" /></svg>
       <span>Plot</span>
@@ -28,7 +28,7 @@
       :aria-pressed="modelsViewMode === 'timeline'"
       aria-label="SOTA Timeline View"
       class="flex-1 px-3 py-2.5 min-h-[38px] rounded-full text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-      :class="modelsViewMode === 'timeline' ? 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
+      :class="modelsViewMode === 'timeline' ? 'bg-[var(--accent)] text-[#090d10] shadow-xs' : 'text-[var(--muted)] hover:text-[var(--strong)]'"
     >
       <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><use href="#icon-calendar" /></svg>
       <span>Timeline</span>

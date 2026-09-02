@@ -225,7 +225,15 @@ import ModelDrawer from './ModelDrawer.astro';
 
   <!-- 3. Best in category Highlight Banner -->
   <template x-if="bestModelInRange && activeFiltersCount > 0">
-    <div class="p-3 rounded-[10px] bg-[var(--panel)] border border-[var(--glass-brd)] flex flex-wrap items-center justify-between gap-3 text-xs border-l-2 border-l-[var(--accent)] shadow-xs">
+    <div
+      @click="openModelDrawer(bestModelInRange, $el)"
+      @keydown.enter.prevent="openModelDrawer(bestModelInRange, $el)"
+      @keydown.space.prevent="openModelDrawer(bestModelInRange, $el)"
+      role="button"
+      tabindex="0"
+      :aria-label="`Inspect ${bestModelInRange.name}`"
+      class="p-3 rounded-[10px] bg-[var(--panel)] border border-[var(--glass-brd)] flex flex-wrap items-center justify-between gap-3 text-xs border-l-2 border-l-[var(--accent)] shadow-xs cursor-pointer hover:border-[var(--accent)]/30 transition-colors"
+    >
       <div class="flex items-center gap-2.5 min-w-0">
         <span class="px-2 py-0.5 rounded-full bg-[var(--accent)] text-[#090d10] font-mono text-[11px] font-bold shrink-0">Top Quality</span>
         <span class="font-bold text-[var(--strong)] truncate text-sm" x-text="bestModelInRange.name"></span>
@@ -239,13 +247,7 @@ import ModelDrawer from './ModelDrawer.astro';
         <template x-if="getModelCost(bestModelInRange) !== null">
           <span class="text-[var(--soft)] font-bold" x-text="getModelCost(bestModelInRange) === 0 ? 'Free' : `${fmtCost(getModelCost(bestModelInRange))}/1M`"></span>
         </template>
-        <button
-          @click="openModelDrawer(bestModelInRange, $el)"
-          class="ml-1 px-3 py-1 rounded-full bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] text-xs font-semibold cursor-pointer hover:opacity-90 shadow-2xs"
-          aria-label="Inspect top quality model"
-        >
-          Inspect →
-        </button>
+
       </div>
     </div>
   </template>
@@ -594,20 +596,10 @@ import ModelDrawer from './ModelDrawer.astro';
                     </template>
                   </div>
 
-                  <!-- Pricing Strip & Inspect Action -->
-                  <div class="pt-2.5 border-t border-[var(--hair)] flex items-center justify-between text-xs font-mono">
-                    <div>
-                      <span class="text-[var(--muted)]">Effective: </span>
-                      <span class="font-bold text-[var(--strong)]" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : `${fmtCost(getModelCost(row.model))}/1M`) : 'Unpriced'"></span>
-                    </div>
-
-                    <button
-                      @click.stop="openModelDrawer(row.model, $el)"
-                      class="px-3 py-1 rounded-full bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] text-xs font-semibold cursor-pointer shadow-2xs"
-                      :aria-label="`Inspect ${row.model.name}`"
-                    >
-                      Inspect →
-                    </button>
+                  <!-- Pricing Strip -->
+                  <div class="pt-2.5 border-t border-[var(--hair)] flex items-center text-xs font-mono">
+                    <span class="text-[var(--muted)]">Effective: </span>
+                    <span class="font-bold text-[var(--strong)] ml-1" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : `${fmtCost(getModelCost(row.model))}/1M`) : 'Unpriced'"></span>
                   </div>
                 </div>
               </template>

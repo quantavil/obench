@@ -141,7 +141,7 @@ export function bench() {
         this.isDark = true;
       }
 
-      // Load saved models if present in localStorage
+      // Load saved models if present in localStorage (offline fallback, KV is primary now)
       try {
         const stored = localStorage.getItem('bench-models');
         const storedSync = localStorage.getItem('bench-last-synced');
@@ -158,6 +158,27 @@ export function bench() {
         }
       } catch (e) {
         console.warn('Failed to load stored models from localStorage', e);
+      }
+
+      try {
+        const res = await fetch('/api/models', { headers: { Accept: 'application/json' } });
+        const json: any = await res.json().catch(() => ({}));
+        if (res.ok && json?.ok && Array.isArray(json.models) && json.models.length > 0) {
+          const kvSyncedAt = typeof json.syncedAt === 'number' ? json.syncedAt : 0;
+          const localSyncedAt = this.data.lastSyncedAt ?? 0;
+          const useKv =
+            kvSyncedAt >= localSyncedAt || (defaultModels as ModelRecord[]).length === 0;
+          if (useKv) {
+            this.data.models = json.models as ModelRecord[];
+            if (kvSyncedAt) this.data.lastSyncedAt = kvSyncedAt;
+            try {
+              localStorage.setItem('bench-models', JSON.stringify(json.models));
+              if (kvSyncedAt) localStorage.setItem('bench-last-synced', String(kvSyncedAt));
+            } catch {}
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to fetch models from /api/models, keeping local/bundled fallback', e);
       }
 
       // Handle URL hash routing
@@ -818,24 +839,24 @@ export function bench() {
       try {
         const models = await fetchAaModels();
         if (Array.isArray(models) && models.length > 0) {
-          // Preserve benchmark telemetry when live AA returns null (stale sparse evals) - merge with previous data
-          const prevById = new Map((this.data.models || []).map((m: any) => [m.id, m]));
-          const merged = models.map((m: any) => {
-            const prev = prevById.get(m.id);
+          const prevById = new Map<string, ModelRecord>(
+            (this.data.models as ModelRecord[]).map((m) => [m.id, m]),
+          );
+          const merged: ModelRecord[] = (models as ModelRecord[]).map((m) => {
+            const prev = prevById.get(m.id) as ModelRecord | undefined;
             if (!prev) return m;
             return {
               ...m,
-              codingIndex: m.codingIndex ?? prev.codingIndex ?? null,
-              mathIndex: m.mathIndex ?? prev.mathIndex ?? null,
-              reasoningIndex: m.reasoningIndex ?? prev.reasoningIndex ?? null,
-              speedTps: m.speedTps ?? prev.speedTps ?? null,
-              latencyTtft: m.latencyTtft ?? prev.latencyTtft ?? null,
-              contextWindow: m.contextWindow ?? prev.contextWindow ?? null,
-              maxOutputTokens: m.maxOutputTokens ?? prev.maxOutputTokens ?? null,
-              // pricing falls back via aaNormalize derived, but keep prev if live is null
-              price1mCacheRead: m.price1mCacheRead ?? prev.price1mCacheRead ?? null,
-              price1mBatch: m.price1mBatch ?? prev.price1mBatch ?? null,
-            };
+              codingIndex: (m as any).codingIndex ?? prev.codingIndex ?? null,
+              mathIndex: (m as any).mathIndex ?? prev.mathIndex ?? null,
+              reasoningIndex: (m as any).reasoningIndex ?? prev.reasoningIndex ?? null,
+              speedTps: (m as any).speedTps ?? prev.speedTps ?? null,
+              latencyTtft: (m as any).latencyTtft ?? prev.latencyTtft ?? null,
+              contextWindow: (m as any).contextWindow ?? prev.contextWindow ?? null,
+              maxOutputTokens: (m as any).maxOutputTokens ?? prev.maxOutputTokens ?? null,
+              price1mCacheRead: (m as any).price1mCacheRead ?? prev.price1mCacheRead ?? null,
+              price1mBatch: (m as any).price1mBatch ?? prev.price1mBatch ?? null,
+            } as ModelRecord;
           });
           this.data.models = merged;
           this.data.lastSyncedAt = Date.now();

@@ -3,9 +3,9 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "astro dev",
+    "dev": "node scripts/ensure-models.mjs && astro dev",
     "start": "astro dev",
-    "build": "astro build",
+    "build": "node scripts/ensure-models.mjs && astro build",
     "preview": "astro preview",
     "astro": "astro",
     "test": "bun test",
