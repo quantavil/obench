@@ -76,8 +76,8 @@ import ModelDrawer from './ModelDrawer.astro';
 
   <!-- 2. Control Strip — View Switcher Tabs + Filter Dropdowns -->
   <div class="flex flex-col xl:flex-row xl:items-center justify-between gap-3">
-    <!-- View Switcher Tabs (4 Primary Modes) -->
-    <div class="seg inline-flex rounded-[10px] p-0.5 max-w-full overflow-x-auto scroll-slim shrink-0" role="tablist" aria-label="View Modes">
+    <!-- View Switcher Tabs (4 Primary Modes) — Hidden on mobile where MobileNav handles navigation -->
+    <div class="seg hidden md:inline-flex rounded-[10px] p-0.5 max-w-full overflow-x-auto scroll-slim shrink-0" role="tablist" aria-label="View Modes">
       <template x-for="m in MODEL_VIEW_MODES" :key="m.id">
         <button
           :id="`tab-${m.id}`"
@@ -98,8 +98,69 @@ import ModelDrawer from './ModelDrawer.astro';
       </template>
     </div>
 
-    <!-- Filter Controls -->
-    <div class="flex flex-wrap items-center gap-2">
+    <!-- Mobile Quick Filter Strip (Horizontal pills for one-touch filtering) -->
+    <div class="md:hidden flex items-center gap-1.5 overflow-x-auto scroll-slim py-0.5" role="toolbar" aria-label="Quick filters">
+      <button
+        @click="selectedCapability = 'all'"
+        :aria-pressed="selectedCapability === 'all'"
+        class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border"
+        :class="selectedCapability === 'all' ? 'chip-active' : 'chip'"
+      >
+        All
+      </button>
+      <button
+        @click="selectedCapability = selectedCapability === 'reasoning' ? 'all' : 'reasoning'"
+        :aria-pressed="selectedCapability === 'reasoning'"
+        class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border flex items-center gap-1"
+        :class="selectedCapability === 'reasoning' ? 'chip-active' : 'chip'"
+      >
+        <span>Reasoning</span>
+      </button>
+      <button
+        @click="selectedCapability = selectedCapability === 'vision' ? 'all' : 'vision'"
+        :aria-pressed="selectedCapability === 'vision'"
+        class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border flex items-center gap-1"
+        :class="selectedCapability === 'vision' ? 'chip-active' : 'chip'"
+      >
+        <span>Vision</span>
+      </button>
+      <button
+        @click="selectedCapability = selectedCapability === 'fast' ? 'all' : 'fast'"
+        :aria-pressed="selectedCapability === 'fast'"
+        class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border flex items-center gap-1"
+        :class="selectedCapability === 'fast' ? 'chip-active' : 'chip'"
+      >
+        <span>Fast</span>
+      </button>
+      <button
+        @click="selectedCapability = selectedCapability === 'open-weights' ? 'all' : 'open-weights'"
+        :aria-pressed="selectedCapability === 'open-weights'"
+        class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border flex items-center gap-1"
+        :class="selectedCapability === 'open-weights' ? 'chip-active' : 'chip'"
+      >
+        <span>Open</span>
+      </button>
+      <button
+        @click="selectedPriceRanges.includes('free') ? selectedPriceRanges = selectedPriceRanges.filter(r => r !== 'free') : selectedPriceRanges.push('free')"
+        :aria-pressed="selectedPriceRanges.includes('free')"
+        class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border flex items-center gap-1"
+        :class="selectedPriceRanges.includes('free') ? 'chip-active' : 'chip'"
+      >
+        <span>Free</span>
+      </button>
+
+      <template x-if="activeFiltersCount > 0">
+        <button
+          @click="clearFilters()"
+          class="shrink-0 px-2 py-1 text-xs font-semibold text-[var(--muted)] hover:text-[var(--strong)] underline cursor-pointer"
+        >
+          Reset
+        </button>
+      </template>
+    </div>
+
+    <!-- Desktop Filter Controls -->
+    <div class="hidden md:flex flex-wrap items-center gap-2">
 
       <!-- Capability Filter — premium multi-dd (was generic select) -->
       <details class="multi-dd" @click.outside="$el.open = false">
@@ -185,6 +246,158 @@ import ModelDrawer from './ModelDrawer.astro';
           Clear (<span x-text="activeFiltersCount"></span>)
         </button>
       </template>
+    </div>
+  </div>
+
+  <!-- Mobile Filter Bottom Sheet Dialog -->
+  <div
+    x-show="mobileFilterOpen"
+    x-cloak
+    class="md:hidden fixed inset-0 z-50 overflow-hidden"
+    role="region"
+    aria-label="Filter & sort sheet"
+    @keydown.escape="closeMobileFilter()"
+  >
+    <!-- Backdrop -->
+    <div
+      x-show="mobileFilterOpen"
+      x-transition:enter="transition-opacity ease-out duration-200"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition-opacity ease-in duration-150"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      @click="closeMobileFilter()"
+      class="fixed inset-0 bg-black/60 backdrop-blur-sm cursor-pointer"
+      aria-hidden="true"
+    ></div>
+
+    <!-- Bottom Sheet Panel -->
+    <div class="fixed inset-x-0 bottom-0 max-w-lg mx-auto w-full flex flex-col pointer-events-none z-10">
+      <div
+        x-show="mobileFilterOpen"
+        x-transition:enter="transform transition ease-out duration-300"
+        x-transition:enter-start="translate-y-full"
+        x-transition:enter-end="translate-y-0"
+        x-transition:leave="transform transition ease-in duration-200"
+        x-transition:leave-start="translate-y-0"
+        x-transition:leave-end="translate-y-full"
+        class="w-full max-h-[85vh] bg-[var(--panel)] border-t border-x border-[var(--glass-brd)] rounded-t-[20px] shadow-2xl flex flex-col pointer-events-auto overflow-hidden"
+      >
+        <!-- Drag handle -->
+        <div class="w-10 h-1 rounded-full bg-[var(--muted)]/40 mx-auto mt-2.5 mb-1 shrink-0" aria-hidden="true"></div>
+
+        <!-- Header -->
+        <div class="h-12 px-4 border-b border-[var(--hair)] flex items-center justify-between gap-3 shrink-0">
+          <div class="flex items-center gap-2">
+            <h3 id="mobile-filter-sheet-title" class="font-bold text-sm text-[var(--strong)]">Filters & Sorting</h3>
+            <template x-if="activeFiltersCount > 0">
+              <span class="px-2 py-0.5 rounded-full bg-[var(--accent)] text-[#090d10] font-mono text-[10px] font-bold" x-text="`${activeFiltersCount} active`"></span>
+            </template>
+          </div>
+          <button
+            @click="closeMobileFilter()"
+            class="w-7 h-7 rounded-full flex items-center justify-center text-[var(--soft)] hover:text-[var(--strong)] hover:bg-[var(--chip-bg)] transition-colors cursor-pointer"
+            aria-label="Close filters"
+          >
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-close" /></svg>
+          </button>
+        </div>
+
+        <!-- Scrollable body -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 scroll-slim pb-8">
+          <!-- Capability -->
+          <div>
+            <label class="text-[11px] font-mono font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">Capability</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <template x-for="cap in CAPABILITY_FILTERS" :key="cap.id">
+                <button
+                  @click="selectedCapability = cap.id"
+                  class="px-2.5 py-2 rounded-lg text-xs font-medium text-left border transition-all flex items-center justify-between cursor-pointer"
+                  :class="selectedCapability === cap.id ? 'bg-[var(--accent)] text-[#090d10] border-[var(--accent)] font-bold shadow-2xs' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--soft)] hover:text-[var(--strong)]'"
+                >
+                  <span x-text="cap.label"></span>
+                  <svg x-show="selectedCapability === cap.id" class="w-3.5 h-3.5 text-[#090d10] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><use href="#icon-check" /></svg>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Price Ranges -->
+          <div>
+            <label class="text-[11px] font-mono font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">Pricing Range</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <template x-for="r in PRICE_RANGES" :key="r.id">
+                <label
+                  class="px-2.5 py-2 rounded-lg text-xs font-medium border flex items-center gap-2 cursor-pointer transition-colors"
+                  :class="selectedPriceRanges.includes(r.id) ? 'border-[var(--accent)] bg-[var(--chip-bg)] text-[var(--strong)] font-semibold' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--soft)]'"
+                >
+                  <input type="checkbox" :value="r.id" x-model="selectedPriceRanges" class="accent-[var(--accent)] rounded w-3.5 h-3.5" />
+                  <span class="truncate" x-text="r.label"></span>
+                </label>
+              </template>
+            </div>
+            <!-- Custom min/max -->
+            <template x-if="selectedPriceRanges.includes('custom')">
+              <div class="flex items-center gap-2 mt-2 pt-2 border-t border-[var(--hair)]">
+                <input type="number" step="0.01" min="0" placeholder="Min $" x-model="customMinPrice" class="flex-1 h-8 px-2 text-xs rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] font-mono" />
+                <span class="text-[var(--muted)]">—</span>
+                <input type="number" step="0.01" min="0" placeholder="Max $" x-model="customMaxPrice" class="flex-1 h-8 px-2 text-xs rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] font-mono" />
+              </div>
+            </template>
+          </div>
+
+          <!-- Sort Order -->
+          <div>
+            <label class="text-[11px] font-mono font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">Sort By</label>
+            <div class="grid grid-cols-1 gap-1">
+              <template x-for="opt in SORT_OPTIONS" :key="opt.id">
+                <button
+                  @click="sortBy = opt.id"
+                  class="w-full px-3 py-2 rounded-lg text-xs text-left border flex items-center justify-between transition-colors cursor-pointer"
+                  :class="sortBy === opt.id ? 'bg-[var(--accent)] text-[#090d10] border-[var(--accent)] font-bold shadow-2xs' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--soft)] hover:text-[var(--strong)]'"
+                >
+                  <span x-text="opt.label"></span>
+                  <svg x-show="sortBy === opt.id" class="w-3.5 h-3.5 text-[#090d10] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><use href="#icon-check" /></svg>
+                </button>
+              </template>
+            </div>
+          </div>
+
+          <!-- Cost Basis -->
+          <div>
+            <label class="text-[11px] font-mono font-bold text-[var(--muted)] uppercase tracking-wider block mb-2">Cost Basis Rate</label>
+            <div class="grid grid-cols-2 gap-1.5">
+              <template x-for="b in COST_BASIS_OPTIONS" :key="b.id">
+                <button
+                  @click="costBasis = b.id"
+                  class="px-2.5 py-2 rounded-lg text-xs text-left border flex items-center justify-between transition-colors cursor-pointer"
+                  :class="costBasis === b.id ? 'bg-[var(--accent)] text-[#090d10] border-[var(--accent)] font-bold shadow-2xs' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--soft)] hover:text-[var(--strong)]'"
+                >
+                  <span x-text="b.label"></span>
+                  <svg x-show="costBasis === b.id" class="w-3.5 h-3.5 text-[#090d10] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><use href="#icon-check" /></svg>
+                </button>
+              </template>
+            </div>
+          </div>
+        </div>
+
+        <!-- Footer Actions -->
+        <div class="h-14 px-4 border-t border-[var(--hair)] bg-[var(--panel-muted)] flex items-center justify-between gap-3 shrink-0">
+          <button
+            @click="clearFilters()"
+            class="text-xs font-semibold text-[var(--muted)] hover:text-[var(--strong)] px-2 py-1 cursor-pointer transition-colors"
+          >
+            Reset All
+          </button>
+          <button
+            @click="closeMobileFilter()"
+            class="btn btn-primary px-5 py-2 text-xs font-bold shadow-xs cursor-pointer"
+          >
+            Apply Filters
+          </button>
+        </div>
+      </div>
     </div>
   </div>
 
@@ -486,7 +699,7 @@ import ModelDrawer from './ModelDrawer.astro';
 
                         <!-- Context Window -->
                         <td class="py-3 px-3 text-center font-mono text-[11px] text-[var(--soft)] hidden lg:table-cell">
-                          <span x-text="row.model.contextWindow ? `${Math.round(row.model.contextWindow / 1000)}k` : '128k'"></span>
+                          <span x-text="fmtContext(row.model.contextWindow)"></span>
                         </td>
 
                         <!-- Input Price -->
@@ -549,57 +762,84 @@ import ModelDrawer from './ModelDrawer.astro';
                   tabindex="0"
                   role="button"
                   :aria-label="`Inspect ${row.model.name}`"
-                  class="model-card p-4 flex flex-col gap-3 cursor-pointer group"
+                  class="model-card p-4 flex flex-col gap-3 cursor-pointer group shadow-2xs"
                 >
-                  <div class="flex items-start justify-between gap-2">
-                    <div class="flex items-center gap-2.5 min-w-0">
-                      <div
-                        class="w-8 h-8 rounded-lg shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs"
-                        :style="`color: ${providerColor(row.model.provider)}`"
-                        x-html="providerSvg(row.model.provider, 16)"
-                      ></div>
-                      <div class="min-w-0">
-                        <span class="text-[12px] font-mono text-[var(--soft)] truncate block font-medium" x-text="row.model.provider"></span>
-                        <h4 class="font-bold text-[var(--strong)] text-sm truncate" x-text="row.model.name"></h4>
+                  <!-- Card Header: Full Width Avatar + Provider/ID + Name (unconstrained width) -->
+                  <div class="flex items-start gap-3 min-w-0">
+                    <div
+                      class="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs mt-0.5"
+                      :style="`color: ${providerColor(row.model.provider)}`"
+                      x-html="providerSvg(row.model.provider, 18)"
+                    ></div>
+                    <div class="min-w-0 flex-1">
+                      <div class="flex items-center gap-1.5 text-[11px] font-mono text-[var(--soft)] font-medium">
+                        <span x-text="row.model.provider"></span>
+                        <span class="text-[var(--muted)]">·</span>
+                        <span class="text-[var(--muted)] truncate" x-text="row.model.id"></span>
                       </div>
-                    </div>
-
-                    <div class="flex items-center gap-2 shrink-0" @click.stop>
-                      <template x-if="row.model.intelligence !== null">
-                        <span class="font-bold text-xs px-2.5 py-0.5 rounded-full iq-badge tabular font-mono" x-text="`${fmt1(row.model.intelligence)} IQ`"></span>
-                      </template>
-                      <template x-if="showCompareCol">
-                        <input
-                          type="checkbox"
-                          :checked="isModelCompared(row.model)"
-                          @change="toggleCompareModel(row.model)"
-                          class="rounded-[4px] border-[var(--field-border)] accent-[var(--accent)] cursor-pointer w-4 h-4"
-                          :aria-label="`Compare ${row.model.name}`"
-                        />
-                      </template>
+                      <h4 class="font-bold text-[var(--strong)] text-[14px] leading-snug tracking-tight mt-0.5 group-hover:underline" x-text="row.model.name"></h4>
                     </div>
                   </div>
 
-                  <!-- Badges & Speed -->
-                  <div class="flex items-center gap-1.5 flex-wrap text-[11px] font-mono">
-                    <template x-if="row.model.speedTps">
-                      <span class="px-2 py-0.5 rounded bg-[var(--chip-bg)] font-bold text-[var(--strong)] flex items-center gap-1">
-                        <svg class="w-3 h-3 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
-                        <span x-text="`${row.model.speedTps} tps`"></span>
-                      </span>
+                  <!-- Badges Row: IQ + Context Badge + Vision + Open Weights -->
+                  <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-mono">
+                    <template x-if="row.model.intelligence !== null">
+                      <span class="font-bold text-[11px] px-2 py-0.5 rounded-full iq-badge tabular font-mono shadow-2xs shrink-0" x-text="`${fmt1(row.model.intelligence)} IQ`"></span>
                     </template>
-                    <template x-if="row.model.contextWindow">
-                      <span class="px-2 py-0.5 rounded badge-ctx font-bold" x-text="`${Math.round(row.model.contextWindow/1000)}k ctx`"></span>
+                    <span class="font-bold px-1.5 py-0.5 rounded badge-ctx" x-text="`${fmtContext(row.model.contextWindow)} ctx`"></span>
+                    <template x-if="row.model.modalities && row.model.modalities.includes('vision')">
+                      <span class="font-bold px-1.5 py-0.5 rounded badge-vision">Vision</span>
                     </template>
                     <template x-if="row.model.isOpenWeights">
-                      <span class="px-2 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 font-bold border border-amber-500/20">Open</span>
+                      <span class="font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">Open</span>
                     </template>
                   </div>
 
-                  <!-- Pricing Strip -->
-                  <div class="pt-2.5 border-t border-[var(--hair)] flex items-center text-xs font-mono">
-                    <span class="text-[var(--muted)]">Effective: </span>
-                    <span class="font-bold text-[var(--strong)] ml-1" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : `${fmtCost(getModelCost(row.model))}/1M`) : 'Unpriced'"></span>
+                  <!-- Benchmark Sub-Indices: Coding, Math, Reasoning -->
+                  <div class="grid grid-cols-3 gap-2 p-2 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] text-xs font-mono text-center">
+                    <div>
+                      <span class="text-[10px] text-[var(--muted)] block">Coding</span>
+                      <span class="font-bold text-[var(--strong)] text-[13px]" x-text="row.model.codingIndex !== null ? row.model.codingIndex : '--'"></span>
+                    </div>
+                    <div>
+                      <span class="text-[10px] text-[var(--muted)] block">Math</span>
+                      <span class="font-bold text-[var(--strong)] text-[13px]" x-text="row.model.mathIndex !== null ? fmt1(row.model.mathIndex) : '--'"></span>
+                    </div>
+                    <div>
+                      <span class="text-[10px] text-[var(--muted)] block">Reasoning</span>
+                      <span class="font-bold text-[var(--strong)] text-[13px]" x-text="row.model.reasoningIndex !== null ? fmt1(row.model.reasoningIndex) : '--'"></span>
+                    </div>
+                  </div>
+
+                  <!-- Pricing Strip & Actions Footer -->
+                  <div class="pt-2 border-t border-[var(--hair)] flex items-center justify-between text-xs font-mono">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <span class="font-bold text-[var(--strong)] text-[13px] truncate" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : `${fmtCost(getModelCost(row.model))}/1M`) : 'Unpriced'"></span>
+                      <template x-if="row.model.speedTps">
+                        <span class="text-[11px] text-[var(--soft)]" x-text="`· ${row.model.speedTps} tps`"></span>
+                      </template>
+                    </div>
+                    <div class="flex items-center gap-1.5 shrink-0">
+                      <!-- 1-Tap Compare Button (compact icon-only) -->
+                      <button
+                        @click.stop="toggleCompareModel(row.model)"
+                        class="w-6 h-6 rounded-md border flex items-center justify-center transition-all shadow-2xs cursor-pointer"
+                        :class="isModelCompared(row.model) ? 'bg-[var(--accent)] border-[var(--accent)] text-[#090d10]' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--muted)] hover:text-[var(--strong)]'"
+                        :aria-label="`Compare ${row.model.name}`"
+                        :title="isModelCompared(row.model) ? 'Remove from comparison' : 'Add to comparison'"
+                      >
+                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <use :href="isModelCompared(row.model) ? '#icon-check' : '#icon-compare'" />
+                        </svg>
+                      </button>
+
+                      <!-- Inspect Chevron (compact icon-only) -->
+                      <div class="w-6 h-6 rounded-md flex items-center justify-center text-[var(--muted)] group-hover:text-[var(--strong)] transition-colors" aria-hidden="true">
+                        <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </template>

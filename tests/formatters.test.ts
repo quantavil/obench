@@ -1,5 +1,5 @@
 import { describe, expect, test } from 'bun:test';
-import { fmtDateTimeCompact, fmt1, fmtDate, fmtCost } from '../src/utils/formatters';
+import { fmtDateTimeCompact, fmt1, fmtDate, fmtCost, fmtContext } from '../src/utils/formatters';
 
 describe('formatters', () => {
   test('formats zero as Free and null as unknown', () => {
@@ -39,5 +39,13 @@ describe('formatters', () => {
 
   test('fmtDate formats timestamp to readable date', () => {
     expect(fmtDate('2026-08-01')).toContain('2026');
+  });
+
+  test('fmtContext formats token context windows without redundancy', () => {
+    expect(fmtContext(1000000)).toBe('1M');
+    expect(fmtContext(2000000)).toBe('2M');
+    expect(fmtContext(128000)).toBe('128k');
+    expect(fmtContext(200000)).toBe('200k');
+    expect(fmtContext(null)).toBe('128k');
   });
 });

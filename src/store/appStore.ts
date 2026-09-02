@@ -40,6 +40,7 @@ import {
   fmtDate,
   fmtDateTime,
   fmtDateTimeCompact,
+  fmtContext,
 } from '../utils/formatters';
 import {
   fetchAaModels,
@@ -82,6 +83,7 @@ export function bench() {
     syncProgress: '',
     search: '',
     showAllProvidersModal: false,
+    mobileFilterOpen: false,
 
     // Theme state
     isDark: true,
@@ -732,6 +734,14 @@ export function bench() {
       return this.selectedModelProviders.includes(p);
     },
 
+    toggleMobileFilter(this: any) {
+      this.mobileFilterOpen = !this.mobileFilterOpen;
+    },
+
+    closeMobileFilter(this: any) {
+      this.mobileFilterOpen = false;
+    },
+
     toggleCompareCol(this: any) {
       this.showCompareCol = !this.showCompareCol;
       if (this.showCompareCol && this.modelsViewMode !== 'table') {
@@ -933,6 +943,10 @@ export function bench() {
 
     fmtDateTimeCompact(ts: any) {
       return fmtDateTimeCompact(ts);
+    },
+
+    fmtContext(tokens: number | null | undefined) {
+      return fmtContext(tokens);
     },
 
     toast(this: any, msg: string, severity: ToastSeverity = 'info') {

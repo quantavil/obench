@@ -112,9 +112,9 @@
     </div>
   </div>
 
-  <!-- Mobile Search Bar -->
-  <div class="md:hidden px-4 pb-3 pt-0" role="search">
-    <div class="relative flex items-center w-full">
+  <!-- Mobile Search Bar + Filter Trigger -->
+  <div class="md:hidden px-4 pb-3 pt-0 flex items-center gap-2" role="search">
+    <div class="relative flex items-center flex-1">
       <svg class="w-3.5 h-3.5 text-[var(--muted)] absolute left-3 pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
         <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
       </svg>
@@ -123,7 +123,7 @@
         x-model="search"
         placeholder="Search models, providers…"
         aria-label="Search models"
-        class="w-full h-9 pl-8 pr-8 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)] dark:focus:border-[var(--accent)] focus:shadow-[0_0_0_2px_rgba(200,255,0,0.15)]"
+        class="w-full h-9 pl-8 pr-8 text-[13px] rounded-[10px] bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] placeholder:text-[var(--muted)] focus:outline-none focus:border-[var(--strong)] dark:focus:border-[var(--accent)] focus:shadow-[0_0_0_2px_rgba(200,255,0,0.15)] transition-all"
       />
       <template x-if="search">
         <button
@@ -136,5 +136,26 @@
         </button>
       </template>
     </div>
+
+    <!-- Mobile Filter Trigger -->
+    <button
+      @click="toggleMobileFilter()"
+      class="h-9 px-3 rounded-[10px] border flex items-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer transition-all select-none shadow-2xs"
+      :class="activeFiltersCount > 0 ? 'bg-[var(--accent)] text-[#090d10] border-[var(--accent)] shadow-xs' : 'bg-[var(--field-bg)] border-[var(--field-border)] text-[var(--strong)] hover:bg-[var(--chip-bg)]'"
+      aria-label="Filter & sort options"
+      :aria-expanded="mobileFilterOpen"
+    >
+      <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+      </svg>
+      <span>Filter</span>
+      <template x-if="activeFiltersCount > 0">
+        <span
+          class="min-w-4 h-4 px-1 rounded-full text-[10px] flex items-center justify-center font-bold font-mono"
+          :class="activeFiltersCount > 0 ? 'bg-[#090d10] text-[var(--accent)]' : 'bg-[var(--strong)] text-[var(--bg)]'"
+          x-text="activeFiltersCount"
+        ></span>
+      </template>
+    </button>
   </div>
 </header>

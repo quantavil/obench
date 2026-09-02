@@ -27,3 +27,5 @@ AI intelligence + pricing workbench. AA benchmarks + live OpenRouter pricing.
 - Sync preserves benchmarks: live `null` coding/math/reasoning/speed keeps previous value.
 - Pricing: AA `-- (null)` + OR `0.01` → picks OR live; `0` Free excluded from frontier.
 - Docs folder removed; source JSON stays pretty (2-space) for git diff, dist is minified/gzipped.
+- Windsurf: User does not use Windsurf; if CBM installer errors on rule limits, ensure stale `~/.codeium` is deleted.
+- Mobile UI: Inspector drawer uses bottom sheet modal; keep `role="dialog"` unique to ModelDrawer to prevent Playwright `wait_for_selector` multi-match timeout.

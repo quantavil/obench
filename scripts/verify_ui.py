@@ -265,17 +265,18 @@ def run():
                 assert box is not None and box["height"] >= 34 and box["width"] >= 40, f"Nav button {i} too small: {box}"
             print("✓ Verified: Mobile navigation touch target sizes compliant")
 
-            # 3c. Mobile Timeline View (cards removed)
+            # 3c. Mobile Timeline View
             timeline_nav_btn = mob_nav.locator("button[aria-label='SOTA Timeline View']")
             timeline_nav_btn.click()
             mob_page.wait_for_timeout(800)
             mob_page.wait_for_selector("#echarts-container svg", timeout=5000)
+            mob_page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_mobile_dark_timeline.png"))
+            print("✓ Captured: screenshot_mobile_dark_timeline.png")
+
             # back to table for drawer test
             mob_page.locator("button[aria-label='Table View']").click()
             mob_page.wait_for_timeout(600)
             mob_page.wait_for_selector(".model-card", timeout=5000)
-            mob_page.screenshot(path=os.path.join(ARTIFACT_DIR, "screenshot_mobile_dark_timeline.png"))
-            print("✓ Captured: screenshot_mobile_dark_timeline.png")
 
             # 3d. Mobile Inspector: Focus Trap, Escape, and Focus Restoration
             inspect_trigger = mob_page.locator(".model-card").first

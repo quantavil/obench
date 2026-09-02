@@ -61,3 +61,12 @@ export function fmtDateTimeCompact(ts: any): string {
     return '';
   }
 }
+
+export function fmtContext(tokens: number | null | undefined): string {
+  if (!tokens) return '128k';
+  if (tokens >= 1_000_000) {
+    const m = tokens / 1_000_000;
+    return `${Number.isInteger(m) ? m : m.toFixed(1).replace(/\.0$/, '')}M`;
+  }
+  return `${Math.round(tokens / 1000)}k`;
+}
