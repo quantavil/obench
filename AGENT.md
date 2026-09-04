@@ -22,11 +22,11 @@ AI intelligence + pricing workbench. AA benchmarks + live OpenRouter pricing.
 ## Commands
 - `bun run dev` → http://localhost:4321
 - `bun scripts/merge-openrouter.mjs [--dry-run]`
-- `bun test` (58 tests), `bun run check`, `bun x tsc --noEmit`, `bun x knip`, `bun run build`, `python3 scripts/verify_ui.py`
+- `bun test` (60 tests), `bun run check`, `bun x tsc --noEmit`, `bun x knip`, `bun run build`, `python3 scripts/verify_ui.py`
 
 ## Notes
 - Sync preserves benchmarks & OR-only models: live `null` coding/math/reasoning/speed keeps previous value, models absent upstream are retained.
 - Pricing: AA `-- (null)` + OR `0.01` → picks OR live; `0` Free excluded from frontier.
 - Docs folder removed; source JSON stays pretty (2-space) for git diff, dist is minified/gzipped.
 - Windsurf: User does not use Windsurf; if CBM installer errors on rule limits, ensure stale `~/.codeium` is deleted.
-- Mobile UI: Inspector drawer uses bottom sheet modal; keep `role="dialog"` unique to ModelDrawer to prevent Playwright `wait_for_selector` multi-match timeout.
+- Mobile UI: Cards spotlight hero IQ score block (`hero-iq-box`) and 4-column key specs (`Context`/`Max Out`/`Speed`/`TTFT`) without benchmark sub-score slop; inspector drawer uses bottom sheet modal with unique `role="dialog"`.

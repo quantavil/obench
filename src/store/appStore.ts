@@ -333,10 +333,13 @@ export function bench() {
           ];
           // Capability keywords — search matches what the filters can express
           const isFree = (m.price1mInput === 0 && m.price1mOutput === 0);
-          if (q === 'free" || q === "free') { /* placeholder never reached */ }
           const capabilityHaystack = [
             modelHasVision(m) ? 'vision multimodal' : '',
             modelHasReasoning(m) ? 'reasoning thinking' : '',
+            (m.speedTps ?? 0) >= 100 ? 'fast speed' : '',
+            (m.contextWindow ?? 0) >= 200000 ? 'long context 1m 200k' : '',
+            m.contextWindow ? `${Math.round(m.contextWindow / 1000)}k` : '',
+            m.maxOutputTokens ? `${Math.round(m.maxOutputTokens / 1000)}k out` : '',
             m.isOpenWeights ? 'open weights' : '',
             isFree ? 'free' : '',
           ].join(' ').toLowerCase();
@@ -396,6 +399,7 @@ export function bench() {
         case 'ttft-asc': return (a.latencyTtft ?? Infinity) - (b.latencyTtft ?? Infinity);
         case 'coding-desc': return (b.codingIndex ?? -1) - (a.codingIndex ?? -1);
         case 'context-desc': return (b.contextWindow ?? 0) - (a.contextWindow ?? 0);
+        case 'max-output-desc': return (b.maxOutputTokens ?? 0) - (a.maxOutputTokens ?? 0);
         case 'price-asc': return (costOf(a) ?? Infinity) - (costOf(b) ?? Infinity);
         case 'price-desc': return (costOf(b) ?? -1) - (costOf(a) ?? -1);
         case 'prompt-asc': return (a.price1mInput ?? Infinity) - (b.price1mInput ?? Infinity);

@@ -589,6 +589,28 @@ kbd {
   letter-spacing: -0.02em;
 }
 
+/* Mobile Hero IQ Score Highlight */
+.hero-iq-box {
+  background: linear-gradient(180deg, var(--chip-bg) 0%, var(--field-bg) 100%);
+  border: 1px solid var(--glass-brd);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+.dark .hero-iq-box {
+  background: linear-gradient(180deg, rgba(200, 255, 0, 0.08) 0%, rgba(20, 28, 34, 0.95) 100%);
+  border-color: rgba(200, 255, 0, 0.22);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.hero-iq-label {
+  color: #047857;
+}
+.dark .hero-iq-label {
+  color: var(--accent);
+}
+.hero-iq-box-unranked {
+  background: var(--field-bg);
+  border: 1px solid var(--glass-brd);
+}
+
 /* Winner comparison badge */
 .badge-winner {
   background: rgba(200, 255, 0, 0.15);

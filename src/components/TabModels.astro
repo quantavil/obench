@@ -141,6 +141,14 @@ import ModelDrawer from './ModelDrawer.astro';
         <span>Open</span>
       </button>
       <button
+        @click="selectedCapability = selectedCapability === 'long-ctx' ? 'all' : 'long-ctx'"
+        :aria-pressed="selectedCapability === 'long-ctx'"
+        class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border flex items-center gap-1"
+        :class="selectedCapability === 'long-ctx' ? 'chip-active' : 'chip'"
+      >
+        <span>200k+ Ctx</span>
+      </button>
+      <button
         @click="selectedPriceRanges.includes('free') ? selectedPriceRanges = selectedPriceRanges.filter(r => r !== 'free') : selectedPriceRanges.push('free')"
         :aria-pressed="selectedPriceRanges.includes('free')"
         class="shrink-0 px-2.5 py-1 rounded-full text-xs font-medium cursor-pointer transition-all border flex items-center gap-1"
@@ -549,7 +557,7 @@ import ModelDrawer from './ModelDrawer.astro';
                           </div>
                         </button>
                       </th>
-                      <th class="py-0 px-0 w-20 text-center hidden lg:table-cell whitespace-nowrap" :aria-sort="getAriaSort('context')">
+                      <th class="py-0 px-0 w-24 text-center hidden md:table-cell whitespace-nowrap" :aria-sort="getAriaSort('context')">
                         <button
                           class="sortable-th-btn justify-center text-center"
                           @click="toggleSort('context')"
@@ -557,7 +565,7 @@ import ModelDrawer from './ModelDrawer.astro';
                           aria-label="Sort by context window"
                         >
                           <div class="flex items-center justify-center gap-1">
-                            <span>Context</span>
+                            <span>Ctx / Max Out</span>
                             <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('context')"></span>
                           </div>
                         </button>
@@ -697,9 +705,12 @@ import ModelDrawer from './ModelDrawer.astro';
                           </template>
                         </td>
 
-                        <!-- Context Window -->
-                        <td class="py-3 px-3 text-center font-mono text-[11px] text-[var(--soft)] hidden lg:table-cell">
-                          <span x-text="fmtContext(row.model.contextWindow)"></span>
+                        <!-- Context Window & Max Output -->
+                        <td class="py-3 px-3 text-center font-mono hidden md:table-cell">
+                          <div class="flex flex-col items-center leading-tight">
+                            <span class="font-semibold text-xs text-[var(--strong)]" x-text="fmtContext(row.model.contextWindow)"></span>
+                            <span class="text-[10px] text-[var(--muted)]" x-text="row.model.maxOutputTokens ? `${fmtContext(row.model.maxOutputTokens)} out` : '--'"></span>
+                          </div>
                         </td>
 
                         <!-- Input Price -->
@@ -752,7 +763,7 @@ import ModelDrawer from './ModelDrawer.astro';
               </div>
             </div>
 
-            <!-- B. MOBILE VIEW: Stacked Model Cards (clean, vertical, card-first on mobile) -->
+            <!-- B. MOBILE VIEW: Stacked Model Cards (Hero Intelligence + Prominent Ctx/Max Specs) -->
             <div class="md:hidden space-y-3">
               <template x-for="(row, idx) in paginatedModels" :key="row.model.id">
                 <article
@@ -760,79 +771,109 @@ import ModelDrawer from './ModelDrawer.astro';
                   @keydown.enter.prevent="openModelDrawer(row.model, $el)"
                   tabindex="0"
                   :aria-label="`Inspect ${row.model.name}`"
-                  class="model-card p-4 flex flex-col gap-3 cursor-pointer group shadow-2xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+                  class="model-card p-4 flex flex-col gap-3.5 cursor-pointer group shadow-2xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 >
-                  <!-- Card Header: Full Width Avatar + Provider/ID + Name (unconstrained width) -->
-                  <div class="flex items-start gap-3 min-w-0">
-                    <div
-                      class="w-9 h-9 rounded-xl shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs mt-0.5"
-                      :style="`color: ${providerColor(row.model.provider)}`"
-                      x-html="providerSvg(row.model.provider, 18)"
-                    ></div>
-                    <div class="min-w-0 flex-1">
-                      <div class="flex items-center gap-1.5 text-[11px] font-mono text-[var(--soft)] font-medium">
-                        <span x-text="row.model.provider"></span>
-                        <span class="text-[var(--muted)]">·</span>
-                        <span class="text-[var(--muted)] truncate" x-text="row.model.id"></span>
+                  <!-- Card Header: Left = Provider/ID/Name/Pills, Right = HERO IQ SCORE BLOCK -->
+                  <div class="flex items-start justify-between gap-3 min-w-0">
+                    <div class="flex items-start gap-3 min-w-0 flex-1">
+                      <div
+                        class="w-10 h-10 rounded-xl shrink-0 flex items-center justify-center border border-[var(--glass-brd)] bg-[var(--field-bg)] shadow-2xs mt-0.5"
+                        :style="`color: ${providerColor(row.model.provider)}`"
+                        x-html="providerSvg(row.model.provider, 20)"
+                      ></div>
+                      <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5 text-[11px] font-mono text-[var(--soft)] font-medium">
+                          <span x-text="row.model.provider"></span>
+                          <span class="text-[var(--muted)]">·</span>
+                          <span class="text-[var(--muted)] truncate max-w-[120px]" x-text="row.model.id"></span>
+                        </div>
+                        <h4 class="font-bold text-[var(--strong)] text-[15px] leading-snug tracking-tight mt-0.5 group-hover:underline" x-text="row.model.name"></h4>
+
+                        <!-- Capability Tags -->
+                        <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-mono mt-1.5">
+                          <template x-if="row.model.modalities && row.model.modalities.includes('vision')">
+                            <span class="font-bold px-1.5 py-0.5 rounded badge-vision">Vision</span>
+                          </template>
+                          <template x-if="row.model.isOpenWeights">
+                            <span class="font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">Open</span>
+                          </template>
+                          <template x-if="row.model.speedTps && row.model.speedTps >= 100">
+                            <span class="font-bold px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/25">Fast</span>
+                          </template>
+                        </div>
                       </div>
-                      <h4 class="font-bold text-[var(--strong)] text-[14px] leading-snug tracking-tight mt-0.5 group-hover:underline" x-text="row.model.name"></h4>
                     </div>
-                  </div>
 
-                  <!-- Badges Row: IQ + Context Badge + Vision + Open Weights -->
-                  <div class="flex items-center gap-1.5 flex-wrap text-[10px] font-mono">
-                    <template x-if="row.model.intelligence !== null">
-                      <span class="font-bold text-[11px] px-2 py-0.5 rounded-full iq-badge tabular font-mono shadow-2xs shrink-0" x-text="`${fmt1(row.model.intelligence)} IQ`"></span>
-                    </template>
-                    <span class="font-bold px-1.5 py-0.5 rounded badge-ctx" x-text="`${fmtContext(row.model.contextWindow)} ctx`"></span>
-                    <template x-if="row.model.modalities && row.model.modalities.includes('vision')">
-                      <span class="font-bold px-1.5 py-0.5 rounded badge-vision">Vision</span>
-                    </template>
-                    <template x-if="row.model.isOpenWeights">
-                      <span class="font-bold px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-700 dark:text-amber-300 border border-amber-500/25">Open</span>
-                    </template>
-                  </div>
-
-                  <!-- Benchmark Sub-Indices: Coding, Math, Reasoning -->
-                  <div class="grid grid-cols-3 gap-2 p-2 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] text-xs font-mono text-center">
-                    <div>
-                      <span class="text-[10px] text-[var(--muted)] block">Coding</span>
-                      <span class="font-bold text-[var(--strong)] text-[13px]" x-text="row.model.codingIndex !== null ? row.model.codingIndex : '--'"></span>
-                    </div>
-                    <div>
-                      <span class="text-[10px] text-[var(--muted)] block">Math</span>
-                      <span class="font-bold text-[var(--strong)] text-[13px]" x-text="row.model.mathIndex !== null ? fmt1(row.model.mathIndex) : '--'"></span>
-                    </div>
-                    <div>
-                      <span class="text-[10px] text-[var(--muted)] block">Reasoning</span>
-                      <span class="font-bold text-[var(--strong)] text-[13px]" x-text="row.model.reasoningIndex !== null ? fmt1(row.model.reasoningIndex) : '--'"></span>
-                    </div>
-                  </div>
-
-                  <!-- Pricing Strip & Actions Footer -->
-                  <div class="pt-2 border-t border-[var(--hair)] flex items-center justify-between text-xs font-mono">
-                    <div class="flex items-center gap-1.5 min-w-0">
-                      <span class="font-bold text-[var(--strong)] text-[13px] truncate" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : `${fmtCost(getModelCost(row.model))}/1M`) : 'Unpriced'"></span>
-                      <template x-if="row.model.speedTps">
-                        <span class="text-[11px] text-[var(--soft)]" x-text="`· ${row.model.speedTps} tps`"></span>
+                    <!-- HERO IQ SCORE HIGHLIGHT (Main card hero, replacing tiny badge) -->
+                    <div class="shrink-0 flex flex-col items-end">
+                      <template x-if="row.model.intelligence !== null">
+                        <div class="px-3 py-2 rounded-xl hero-iq-box flex flex-col items-center justify-center min-w-[74px] text-center">
+                          <span class="text-[9px] font-mono font-bold uppercase tracking-widest hero-iq-label leading-none">IQ SCORE</span>
+                          <span class="text-2xl font-black font-mono tracking-tight text-[var(--strong)] leading-tight my-0.5" x-text="fmt1(row.model.intelligence)"></span>
+                          <span class="text-[9px] font-mono text-[var(--muted)] leading-none" x-text="`Rank #${idx + 1}`"></span>
+                        </div>
+                      </template>
+                      <template x-if="row.model.intelligence === null">
+                        <div class="px-3 py-2 rounded-xl hero-iq-box-unranked flex flex-col items-center justify-center min-w-[74px] text-center">
+                          <span class="text-[9px] font-mono font-bold uppercase tracking-widest text-[var(--muted)] leading-none">IQ SCORE</span>
+                          <span class="text-lg font-bold font-mono text-[var(--muted)] leading-tight my-0.5">--</span>
+                          <span class="text-[8px] font-mono text-[var(--muted)] leading-none">Unranked</span>
+                        </div>
                       </template>
                     </div>
-                    <div class="flex items-center gap-1.5 shrink-0">
-                      <!-- 1-Tap Compare Button (touch-friendly min 36px target) -->
+                  </div>
+
+                  <!-- Key Telemetry Ribbon: Context, Max Out, Speed, TTFT (No sub-score clutter) -->
+                  <div class="grid grid-cols-4 gap-1.5 p-2 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] text-xs font-mono text-center">
+                    <div class="p-1">
+                      <span class="text-[10px] text-[var(--muted)] block uppercase tracking-wider">Context</span>
+                      <span class="font-bold text-[var(--strong)] text-[12px] sm:text-[13px]" x-text="fmtContext(row.model.contextWindow)"></span>
+                    </div>
+                    <div class="p-1">
+                      <span class="text-[10px] text-[var(--muted)] block uppercase tracking-wider">Max Out</span>
+                      <span class="font-bold text-[var(--strong)] text-[12px] sm:text-[13px]" x-text="row.model.maxOutputTokens ? fmtContext(row.model.maxOutputTokens) : '--'"></span>
+                    </div>
+                    <div class="p-1">
+                      <span class="text-[10px] text-[var(--muted)] block uppercase tracking-wider">Speed</span>
+                      <span class="font-bold text-[var(--strong)] text-[12px] sm:text-[13px]" x-text="row.model.speedTps ? `${row.model.speedTps} t/s` : '--'"></span>
+                    </div>
+                    <div class="p-1">
+                      <span class="text-[10px] text-[var(--muted)] block uppercase tracking-wider">TTFT</span>
+                      <span class="font-bold text-[var(--strong)] text-[12px] sm:text-[13px]" x-text="row.model.latencyTtft ? `${row.model.latencyTtft}s` : '--'"></span>
+                    </div>
+                  </div>
+
+                  <!-- Pricing Strip & 1-Tap Compare Action -->
+                  <div class="pt-2 border-t border-[var(--hair)] flex items-center justify-between text-xs font-mono">
+                    <div class="min-w-0">
+                      <div class="flex items-baseline gap-1">
+                        <span class="font-bold text-[var(--strong)] text-[14px]" x-text="getModelCost(row.model) !== null ? (getModelCost(row.model) === 0 ? 'Free' : fmtCost(getModelCost(row.model))) : 'Unpriced'"></span>
+                        <span class="text-[10px] text-[var(--muted)]" x-show="getModelCost(row.model) !== null && getModelCost(row.model) > 0">/ 1M</span>
+                        <span class="text-[10px] text-[var(--soft)] ml-0.5" x-text="`(${costBasisShortLabel(costBasis)})`"></span>
+                      </div>
+                      <div class="text-[10px] text-[var(--muted)] flex items-center gap-1.5 mt-0.5">
+                        <span x-text="row.model.price1mInput !== null ? (row.model.price1mInput === 0 ? 'Free in' : `$${row.model.price1mInput} in`) : '-- in'"></span>
+                        <span>·</span>
+                        <span x-text="row.model.price1mOutput !== null ? (row.model.price1mOutput === 0 ? 'Free out' : `$${row.model.price1mOutput} out`) : '-- out'"></span>
+                      </div>
+                    </div>
+                    <div class="flex items-center gap-2 shrink-0">
+                      <!-- 1-Tap Compare Button (touch-friendly min 38px target with label) -->
                       <button
                         @click.stop="toggleCompareModel(row.model)"
-                        class="w-9 h-9 min-h-[36px] min-w-[36px] rounded-lg border flex items-center justify-center transition-all shadow-2xs cursor-pointer"
-                        :class="isModelCompared(row.model) ? 'bg-[var(--accent)] border-[var(--accent)] text-[#090d10]' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--muted)] hover:text-[var(--strong)]'"
+                        class="h-9 px-2.5 rounded-lg border flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer text-xs font-semibold"
+                        :class="isModelCompared(row.model) ? 'bg-[var(--accent)] border-[var(--accent)] text-[#090d10]' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--soft)] hover:text-[var(--strong)]'"
                         :aria-label="`Compare ${row.model.name}`"
                         :title="isModelCompared(row.model) ? 'Remove from comparison' : 'Add to comparison'"
                       >
                         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <use :href="isModelCompared(row.model) ? '#icon-check' : '#icon-compare'" />
                         </svg>
+                        <span class="text-[11px]" x-text="isModelCompared(row.model) ? 'Compared' : 'Compare'"></span>
                       </button>
 
                       <!-- Inspect Chevron -->
-                      <div class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--muted)] group-hover:text-[var(--strong)] transition-colors" aria-hidden="true">
+                      <div class="w-7 h-7 rounded-lg flex items-center justify-center text-[var(--muted)] group-hover:text-[var(--strong)] transition-colors" aria-hidden="true">
                         <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
@@ -1120,7 +1161,11 @@ import ModelDrawer from './ModelDrawer.astro';
                       </div>
                       <div class="flex justify-between py-1 border-b border-[var(--hair)]">
                         <span class="text-[var(--soft)]">Context Window</span>
-                        <span class="font-bold text-[var(--strong)]" x-text="m.contextWindow ? `${Math.round(m.contextWindow/1000)}k tokens` : '128k'"></span>
+                        <span class="font-bold text-[var(--strong)]" x-text="m.contextWindow ? `${fmtContext(m.contextWindow)} tokens` : '--'"></span>
+                      </div>
+                      <div class="flex justify-between py-1 border-b border-[var(--hair)]">
+                        <span class="text-[var(--soft)]">Max Output Tokens</span>
+                        <span class="font-bold text-[var(--strong)]" x-text="m.maxOutputTokens ? `${fmtContext(m.maxOutputTokens)} tokens` : '--'"></span>
                       </div>
                       <div class="flex justify-between py-1 border-b border-[var(--hair)]">
                         <span class="text-[var(--soft)]">Prompt / 1M</span>

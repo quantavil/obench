@@ -106,4 +106,14 @@ describe('UI Markup & Accessibility Invariants', () => {
     expect(store.toastMsg).toBe('Default info');
     expect(store.toastSeverity).toBe('info');
   });
+
+  test('mobile cards display hero IQ and telemetry ribbon without benchmark sub-scores', async () => {
+    const tabSource = await Bun.file('src/components/TabModels.astro').text();
+    expect(tabSource).toContain('hero-iq-box');
+    expect(tabSource).toContain('hero-iq-label');
+    expect(tabSource).toContain('Context');
+    expect(tabSource).toContain('Max Out');
+    // Ensure the old sub-score grid on mobile cards is gone
+    expect(tabSource).not.toContain('<!-- Benchmark Sub-Indices: Coding, Math, Reasoning -->');
+  });
 });

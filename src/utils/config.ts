@@ -27,6 +27,7 @@ export const SORT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'output-asc', label: 'Output Price (Lowest first)' },
   { id: 'output-desc', label: 'Output Price (Highest first)' },
   { id: 'context-desc', label: 'Context Window (Largest)' },
+  { id: 'max-output-desc', label: 'Max Output Tokens (Largest)' },
   { id: 'name-asc', label: 'Name (A to Z)' },
   { id: 'name-desc', label: 'Name (Z to A)' },
   { id: 'date-desc', label: 'Release Date (Newest)' },

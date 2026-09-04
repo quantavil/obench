@@ -169,3 +169,15 @@ test('token cost estimator calculation', () => {
   store.calcOutputTokens = 1000000;
   expect(store.estimatedRunCost).toBe('$12.0000');
 });
+
+test('sorting by max-output-desc places largest output models first', () => {
+  const store = bench();
+  store.data.models = [
+    { id: 'small', name: 'Small Out', provider: 'P1', maxOutputTokens: 4096 } as ModelRecord,
+    { id: 'huge', name: 'Huge Out', provider: 'P2', maxOutputTokens: 131072 } as ModelRecord,
+    { id: 'mid', name: 'Mid Out', provider: 'P3', maxOutputTokens: 16384 } as ModelRecord,
+  ];
+  store.sortBy = 'max-output-desc';
+  store.updateModelRows();
+  expect(store.rankedModelsByIntelligence.map((r: any) => r.model.id)).toEqual(['huge', 'mid', 'small']);
+});

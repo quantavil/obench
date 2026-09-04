@@ -45,11 +45,17 @@
       </div>
       <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
         <span class="text-[10px] text-[var(--soft)] block">Context</span>
-        <span class="text-xs font-bold text-[var(--strong)]" x-text="fmtContext(inspectedModel.contextWindow)"></span>
+        <div class="flex items-baseline gap-1">
+          <span class="text-xs font-bold text-[var(--strong)]" x-text="fmtContext(inspectedModel.contextWindow)"></span>
+          <span class="text-[10px] text-[var(--muted)]" x-show="inspectedModel.contextWindow">tokens</span>
+        </div>
       </div>
       <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
         <span class="text-[10px] text-[var(--soft)] block">Max Out</span>
-        <span class="text-xs font-bold text-[var(--strong)]" x-text="inspectedModel.maxOutputTokens ? fmtContext(inspectedModel.maxOutputTokens) : '--'"></span>
+        <div class="flex items-baseline gap-1">
+          <span class="text-xs font-bold text-[var(--strong)]" x-text="inspectedModel.maxOutputTokens ? fmtContext(inspectedModel.maxOutputTokens) : '--'"></span>
+          <span class="text-[10px] text-[var(--muted)]" x-show="inspectedModel.maxOutputTokens">tokens</span>
+        </div>
       </div>
     </div>
   </div>
