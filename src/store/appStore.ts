@@ -155,11 +155,11 @@ export function bench() {
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed) && parsed.length > 0) {
+            // Heal stored models with defaultModels so contextWindow, maxOutputTokens, pricing, and new models are never lost
+            const healed = mergeSyncedModels(defaultModels as ModelRecord[], parsed as ModelRecord[]);
+            this.data.models = healed;
             if (storedSync) {
-              this.data.models = parsed;
               this.data.lastSyncedAt = Number(storedSync);
-            } else if (parsed.length >= (defaultModels || []).length) {
-              this.data.models = parsed;
             }
           }
         }
@@ -175,11 +175,12 @@ export function bench() {
           const localSyncedAt = this.data.lastSyncedAt ?? 0;
           const useKv = kvSyncedAt >= localSyncedAt || (defaultModels as ModelRecord[]).length === 0;
           if (useKv) {
-            this.data.models = json.models as ModelRecord[];
+            const merged = mergeSyncedModels(defaultModels as ModelRecord[], json.models as ModelRecord[]);
+            this.data.models = merged;
             this.data.lastSyncedAt = kvSyncedAt || null;
             this.data.datasetStale = Boolean(json.stale);
             try {
-              localStorage.setItem('bench-models', JSON.stringify(json.models));
+              localStorage.setItem('bench-models', JSON.stringify(merged));
               if (kvSyncedAt) localStorage.setItem('bench-last-synced', String(kvSyncedAt));
             } catch {}
           }
@@ -188,86 +189,92 @@ export function bench() {
         console.warn('Failed to fetch models from /api/models, keeping local/bundled fallback', e);
       }
 
-      this.initHashRouting();
+      if (typeof window !== 'undefined') {
+        this.initHashRouting();
 
-      window.addEventListener('keydown', (e: KeyboardEvent) => {
-        if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
-          e.preventDefault();
-          this.focusSearch();
-        }
-        if (e.key === 'Escape') {
-          if (this.inspectedModel) {
-            this.closeModelDrawer();
-          } else if (this.mobileFilterOpen) {
-            this.closeMobileFilter();
-          } else if (this.search) {
-            this.search = '';
+        window.addEventListener('keydown', (e: KeyboardEvent) => {
+          if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+            e.preventDefault();
+            this.focusSearch();
           }
-        }
-      });
+          if (e.key === 'Escape') {
+            if (this.inspectedModel) {
+              this.closeModelDrawer();
+            } else if (this.mobileFilterOpen) {
+              this.closeMobileFilter();
+            } else if (this.search) {
+              this.search = '';
+            }
+          }
+        });
 
-      let resizeTimer: any = null;
-      window.addEventListener('resize', () => {
-        reconcileInspectorScrollLock(this.inspectedModel !== null);
-        if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
-          if (resizeTimer) clearTimeout(resizeTimer);
-          resizeTimer = setTimeout(async () => {
-            const charts = await loadCharts();
-            charts.resizeActiveChart();
-          }, 100);
-        }
-      });
+        let resizeTimer: any = null;
+        window.addEventListener('resize', () => {
+          reconcileInspectorScrollLock(this.inspectedModel !== null);
+          if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
+            if (resizeTimer) clearTimeout(resizeTimer);
+            resizeTimer = setTimeout(async () => {
+              const charts = await loadCharts();
+              charts.resizeActiveChart();
+            }, 100);
+          }
+        });
+      }
 
       // Watchers for reactive derivations
-      this.$watch('modelFilterKey', () => {
-        this.modelsPage = 1;
-        this.modelsPageSize = 100;
-        this.updateModelRows();
-        this.$nextTick(() => {
-          this.mountCurrentChart();
-        });
-      });
-
-      this.$watch('modelsViewMode', () => {
-        this.syncViewHash();
-        this.updateOptimalModels();
-        this.$nextTick(() => {
-          this.mountCurrentChart();
-        });
-      });
-
-      this.$watch('plotMetric', () => {
-        this.$nextTick(() => {
-          this.mountCurrentChart();
-        });
-      });
-
-      this.$watch('plotScale', () => {
-        this.$nextTick(() => {
-          this.mountCurrentChart();
-        });
-      });
-
-      this.$watch('costBasis', () => {
-        this.updateOptimalModels();
-        this.$nextTick(() => {
-          this.mountCurrentChart();
-        });
-      });
-
-      this.$watch('inspectedModel', () => {
-        this.$nextTick(() => {
-          if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
+      if (typeof this.$watch === 'function') {
+        this.$watch('modelFilterKey', () => {
+          this.modelsPage = 1;
+          this.modelsPageSize = 100;
+          this.updateModelRows();
+          this.$nextTick?.(() => {
             this.mountCurrentChart();
-          }
+          });
         });
-      });
+
+        this.$watch('modelsViewMode', () => {
+          this.syncViewHash();
+          this.updateOptimalModels();
+          this.$nextTick?.(() => {
+            this.mountCurrentChart();
+          });
+        });
+
+        this.$watch('plotMetric', () => {
+          this.$nextTick?.(() => {
+            this.mountCurrentChart();
+          });
+        });
+
+        this.$watch('plotScale', () => {
+          this.$nextTick?.(() => {
+            this.mountCurrentChart();
+          });
+        });
+
+        this.$watch('costBasis', () => {
+          this.updateOptimalModels();
+          this.$nextTick?.(() => {
+            this.mountCurrentChart();
+          });
+        });
+
+        this.$watch('inspectedModel', () => {
+          this.$nextTick?.(() => {
+            if (this.modelsViewMode === 'plot' || this.modelsViewMode === 'timeline') {
+              this.mountCurrentChart();
+            }
+          });
+        });
+      }
 
       // Initial compute & mount
       this.updateModelRows();
-      this.$nextTick(() => {
-        this.mountCurrentChart();
-      });
+      if (typeof this.$nextTick === 'function') {
+        this.$nextTick(() => {
+          this.mountCurrentChart();
+        });
+      }
     },
 
     initHashRouting(this: any) {
@@ -732,7 +739,8 @@ export function bench() {
       try {
         const freshModels = await fetchAaModels();
         if (Array.isArray(freshModels) && freshModels.length > 0) {
-          const merged = mergeSyncedModels(this.data.models as ModelRecord[], freshModels as ModelRecord[]);
+          const base = mergeSyncedModels(defaultModels as ModelRecord[], (this.data.models as ModelRecord[]) || []);
+          const merged = mergeSyncedModels(base, freshModels as ModelRecord[]);
           this.data.models = merged;
           this.data.lastSyncedAt = Date.now();
           this.data.datasetStale = false;

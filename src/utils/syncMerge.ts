@@ -13,10 +13,14 @@ const PRESERVED_FIELDS = [
   'reasoningIndex',
   'speedTps',
   'latencyTtft',
+  'latencyTtfat',
   'contextWindow',
   'maxOutputTokens',
+  'price1mInput',
+  'price1mOutput',
   'price1mCacheRead',
   'price1mBatch',
+  'evaluations',
 ] as const;
 
 type Mergeable = Pick<ModelRecord, 'id'> & Partial<ModelRecord>;
@@ -33,6 +37,20 @@ export function mergeSyncedModels<T extends Mergeable>(prevModels: T[], freshMod
         (out as Record<string, unknown>)[field] = prev[field];
       }
     }
+
+    // Merge nested evaluations if both exist so individual benchmark stats are not lost
+    if (out.evaluations && prev.evaluations && typeof out.evaluations === 'object' && typeof prev.evaluations === 'object') {
+      out.evaluations = {
+        ...prev.evaluations,
+        ...Object.fromEntries(Object.entries(out.evaluations).filter(([_, v]) => v != null)),
+      };
+    }
+
+    // Preserve enriched modalities (e.g. vision support from OpenRouter)
+    if ((!out.modalities || out.modalities.length <= 1) && prev.modalities && prev.modalities.length > 1) {
+      out.modalities = prev.modalities;
+    }
+
     return out;
   });
 

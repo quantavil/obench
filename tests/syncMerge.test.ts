@@ -74,4 +74,57 @@ describe('syncMerge > mergeSyncedModels', () => {
     expect(m.price1mCacheRead).toBe(0.5);
     expect(m.price1mBatch).toBe(1.0);
   });
+
+  test('preserves pricing, latencyTtfat, and merges nested evaluations', () => {
+    const existing: ModelRecord[] = [
+      {
+        id: 'r1',
+        name: 'DeepSeek R1',
+        provider: 'DeepSeek',
+        intelligence: 85,
+        price1mInput: 0.55,
+        price1mOutput: 2.19,
+        latencyTtfat: 15.2,
+        contextWindow: 128000,
+        modalities: ['text', 'vision'],
+        evaluations: {
+          hle: 0.25,
+          gpqa: 0.71,
+          tau2: 0.45,
+        },
+      } as ModelRecord,
+    ];
+
+    const fresh: ModelRecord[] = [
+      {
+        id: 'r1',
+        name: 'DeepSeek R1',
+        provider: 'DeepSeek',
+        intelligence: 86,
+        price1mInput: null, // live null pricing should preserve existing
+        price1mOutput: null,
+        latencyTtfat: null,
+        contextWindow: null, // live null context should preserve existing
+        modalities: ['text'],
+        evaluations: {
+          gpqa: 0.74, // updated GPQA
+          livecodebench: 0.68, // newly reported benchmark
+        },
+      } as ModelRecord,
+    ];
+
+    const merged = mergeSyncedModels(existing, fresh);
+    const m = merged[0];
+    expect(m.price1mInput).toBe(0.55);
+    expect(m.price1mOutput).toBe(2.19);
+    expect(m.contextWindow).toBe(128000);
+    expect(m.latencyTtfat).toBe(15.2);
+    expect(m.modalities).toEqual(['text', 'vision']);
+    expect(m.evaluations).toEqual({
+      hle: 0.25, // preserved
+      gpqa: 0.74, // updated
+      tau2: 0.45, // preserved
+      livecodebench: 0.68, // added
+    });
+  });
 });

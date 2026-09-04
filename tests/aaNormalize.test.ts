@@ -114,3 +114,51 @@ test('normalizeAaRecords normalizes raw Artificial Analysis API records correctl
   expect(normalized[1].intelligence).toBe(76.8);
   expect(normalized[1].isOpenWeights).toBe(true);
 });
+
+test('extracts detailed frontier evaluations, TTFAT, and derives benchmark fallbacks', () => {
+  const raw = [
+    {
+      id: 'frontier-model',
+      name: 'Frontier AI 1',
+      model_creator: { name: 'FrontierLab' },
+      release_date: '2025-06-01',
+      median_time_to_first_answer_token: 12.456,
+      median_time_to_first_token_seconds: 0.35,
+      evaluations: {
+        artificial_analysis_intelligence_index: 88.0,
+        // Composite indices absent, should fall back to raw benchmarks
+        livecodebench: 0.652,
+        math_500: 0.914,
+        gpqa: 0.738,
+        hle: 0.154,
+        scicode: 0.485,
+        tau2: 0.521,
+        terminalbench_hard: 0.285,
+        ifbench: 0.774,
+        lcr: 0.612,
+        mmlu_pro: 0.812,
+        aime_25: 0.850,
+      },
+    },
+  ];
+
+  const [model] = normalizeAaRecords(raw);
+  expect(model).toBeDefined();
+  expect(model.codingIndex).toBe(65.2); // derived from livecodebench * 100
+  expect(model.mathIndex).toBe(85.0); // derived from aime_25 * 100
+  expect(model.reasoningIndex).toBe(73.8); // derived from gpqa * 100
+  expect(model.latencyTtfat).toBe(12.46);
+  expect(model.evaluations).toEqual({
+    gpqa: 0.738,
+    hle: 0.154,
+    scicode: 0.485,
+    livecodebench: 0.652,
+    math500: 0.914,
+    aime25: 0.850,
+    ifbench: 0.774,
+    lcr: 0.612,
+    tau2: 0.521,
+    terminalbenchHard: 0.285,
+    mmluPro: 0.812,
+  });
+});

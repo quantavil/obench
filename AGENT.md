@@ -24,6 +24,11 @@ AI intelligence + pricing workbench. AA benchmarks + live OpenRouter pricing.
 - `bun scripts/merge-openrouter.mjs [--dry-run]`
 - `bun test` (60 tests), `bun run check`, `bun x tsc --noEmit`, `bun x knip`, `bun run build`, `python3 scripts/verify_ui.py`
 
+## Blunders & Discoveries
+- Blunder: Stale client `localStorage` overwrote bundled dataset with null context/maxOut; dev proxy missed `/api/models`. Fixed via `mergeSyncedModels(defaultModels, ...)` healing in `appStore.ts` and `/api/*` Vite proxy.
+- Discovery: AA API provides 11 frontier benchmarks (HLE, GPQA, TAU-2, TerminalBench, LiveCodeBench, SciCode, MATH-500, AIME 2025, IFBench, LCR, MMLU-Pro) and TTFAT (`median_time_to_first_answer_token`). Surface in `ModelDrawerBody.astro`.
+- Data: `src/data/models.json` has 780 models (630 with frontier evals, 771 with contextWindow, 766 with maxOutputTokens, 188 with TTFAT).
+
 ## Notes
 - Sync preserves benchmarks & OR-only models: live `null` coding/math/reasoning/speed keeps previous value, models absent upstream are retained.
 - Pricing: AA `-- (null)` + OR `0.01` → picks OR live; `0` Free excluded from frontier.

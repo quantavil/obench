@@ -1,4 +1,4 @@
-import type { ModelRecord } from '../types/model';
+import type { ModelRecord, ModelEvaluations } from '../types/model';
 
 export const AA_MODELS_URL = 'https://artificialanalysis.ai/api/v2/data/llms/models';
 
@@ -68,6 +68,39 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
     if (price1mCacheRead == null && price1mInput != null) price1mCacheRead = Math.round(price1mInput * 0.25 * 100) / 100;
     if (price1mBatch == null && price1mInput != null) price1mBatch = Math.round(price1mInput * 0.5 * 100) / 100;
 
+    const rawEvals = rec.evaluations || {};
+
+    // Detailed raw evaluations
+    const gpqa = typeof rawEvals.gpqa === 'number' ? Math.round(rawEvals.gpqa * 1000) / 1000 : null;
+    const hle = typeof rawEvals.hle === 'number' ? Math.round(rawEvals.hle * 1000) / 1000 : null;
+    const scicode = typeof rawEvals.scicode === 'number' ? Math.round(rawEvals.scicode * 1000) / 1000 : null;
+    const livecodebench = typeof rawEvals.livecodebench === 'number' ? Math.round(rawEvals.livecodebench * 1000) / 1000 : null;
+    const math500 = typeof (rawEvals.math_500 ?? rawEvals.math500) === 'number' ? Math.round((rawEvals.math_500 ?? rawEvals.math500) * 1000) / 1000 : null;
+    const aime25 = typeof (rawEvals.aime_25 ?? rawEvals.aime25) === 'number' ? Math.round((rawEvals.aime_25 ?? rawEvals.aime25) * 1000) / 1000 : null;
+    const ifbench = typeof rawEvals.ifbench === 'number' ? Math.round(rawEvals.ifbench * 1000) / 1000 : null;
+    const lcr = typeof rawEvals.lcr === 'number' ? Math.round(rawEvals.lcr * 1000) / 1000 : null;
+    const tau2 = typeof rawEvals.tau2 === 'number' ? Math.round(rawEvals.tau2 * 1000) / 1000 : null;
+    const terminalbenchHard = typeof (rawEvals.terminalbench_hard ?? rawEvals.terminalbenchHard) === 'number' ? Math.round((rawEvals.terminalbench_hard ?? rawEvals.terminalbenchHard) * 1000) / 1000 : null;
+    const mmluPro = typeof (rawEvals.mmlu_pro ?? rawEvals.mmluPro) === 'number' ? Math.round((rawEvals.mmlu_pro ?? rawEvals.mmluPro) * 1000) / 1000 : null;
+
+    const evaluations: ModelEvaluations | null = (
+      gpqa != null || hle != null || scicode != null || livecodebench != null ||
+      math500 != null || aime25 != null || ifbench != null || lcr != null ||
+      tau2 != null || terminalbenchHard != null || mmluPro != null
+    ) ? {
+      gpqa,
+      hle,
+      scicode,
+      livecodebench,
+      math500,
+      aime25,
+      ifbench,
+      lcr,
+      tau2,
+      terminalbenchHard,
+      mmluPro,
+    } : (rec.evaluations && typeof rec.evaluations === 'object' ? rec.evaluations : null);
+
     // Intelligence & Benchmark sub-indices (keep absent telemetry as null)
     const intelligence = typeof rec.evaluations?.artificial_analysis_intelligence_index === 'number'
       ? rec.evaluations.artificial_analysis_intelligence_index
@@ -81,6 +114,10 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
       ? rec.evaluations.coding_index
       : typeof rec.codingIndex === 'number'
       ? rec.codingIndex
+      : typeof rawEvals.livecodebench === 'number'
+      ? Math.round(rawEvals.livecodebench * 100 * 10) / 10
+      : typeof rawEvals.scicode === 'number'
+      ? Math.round(rawEvals.scicode * 100 * 10) / 10
       : null;
 
     const mathIndex = typeof rec.evaluations?.artificial_analysis_math_index === 'number'
@@ -89,6 +126,12 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
       ? rec.evaluations.math_index
       : typeof rec.mathIndex === 'number'
       ? rec.mathIndex
+      : typeof (rawEvals.aime_25 ?? rawEvals.aime25) === 'number'
+      ? Math.round((rawEvals.aime_25 ?? rawEvals.aime25) * 100 * 10) / 10
+      : typeof (rawEvals.math_500 ?? rawEvals.math500) === 'number'
+      ? Math.round((rawEvals.math_500 ?? rawEvals.math500) * 100 * 10) / 10
+      : typeof rawEvals.aime === 'number'
+      ? Math.round(rawEvals.aime * 100 * 10) / 10
       : null;
 
     const reasoningIndex = typeof rec.evaluations?.reasoning_index === 'number'
@@ -99,6 +142,8 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
       ? rec.evaluations.artificial_analysis_reasoning_index
       : typeof rec.reasoningIndex === 'number'
       ? rec.reasoningIndex
+      : typeof (rawEvals.mmlu_pro ?? rawEvals.mmluPro) === 'number'
+      ? Math.round((rawEvals.mmlu_pro ?? rawEvals.mmluPro) * 100 * 10) / 10
       : null;
 
     // Speed & Latency
@@ -112,12 +157,19 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
 
     const rawTtft =
       rec.performance?.median_time_to_first_token_seconds ??
-      rec.performance?.median_time_to_first_answer_token_seconds ??
       rec.performance?.time_to_first_token_seconds ??
       rec.performance?.ttft ??
       rec.median_time_to_first_token_seconds ??
       rec.latencyTtft;
     const latencyTtft = typeof rawTtft === 'number' ? Math.round(rawTtft * 100) / 100 : null;
+
+    const rawTtfat =
+      rec.performance?.median_time_to_first_answer_token_seconds ??
+      rec.performance?.median_time_to_first_answer_token ??
+      rec.performance?.time_to_first_answer_token ??
+      rec.median_time_to_first_answer_token ??
+      rec.latencyTtfat;
+    const latencyTtfat = typeof rawTtfat === 'number' && rawTtfat > 0 ? Math.round(rawTtfat * 100) / 100 : null;
 
     // Context window & limits (keep absent as null)
     const rawContext = rec.limits?.max_context_window ?? rec.context_window ?? rec.max_context_window ?? rec.contextWindow;
@@ -158,10 +210,12 @@ export function normalizeAaRecordsWithReport(allRecords: unknown[]): NormalizeRe
         reasoningIndex,
         speedTps,
         latencyTtft,
+        latencyTtfat,
         contextWindow,
         maxOutputTokens,
         modalities,
         isOpenWeights,
+        evaluations,
       });
     }
   }

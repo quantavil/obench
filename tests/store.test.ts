@@ -181,3 +181,37 @@ test('sorting by max-output-desc places largest output models first', () => {
   store.updateModelRows();
   expect(store.rankedModelsByIntelligence.map((r: any) => r.model.id)).toEqual(['huge', 'mid', 'small']);
 });
+
+test('bench store init heals stale localStorage models missing contextWindow or maxOutputTokens', async () => {
+  const store = bench();
+  const storage = new Map<string, string>();
+  const origStorage = globalThis.localStorage;
+  globalThis.localStorage = {
+    getItem: (k: string) => storage.get(k) ?? null,
+    setItem: (k: string, v: string) => storage.set(k, v),
+    removeItem: (k: string) => storage.delete(k),
+    clear: () => storage.clear(),
+  } as any;
+
+  // Simulate stale cached localStorage with null limits
+  const staleModels = [
+    { id: 'claude-3-7-sonnet', name: 'Claude 3.7 Sonnet', contextWindow: null, maxOutputTokens: null },
+  ];
+  storage.set('bench-models', JSON.stringify(staleModels));
+
+  // Stub fetch so it returns 404/500 like dev server offline
+  const origFetch = globalThis.fetch;
+  globalThis.fetch = (async () => new Response(JSON.stringify({ ok: false }), { status: 500 })) as any;
+
+  try {
+    await store.init();
+    const healed = store.data.models.find((m: any) => m.id === 'claude-3-7-sonnet');
+    expect(healed).toBeDefined();
+    // Default models should have healed contextWindow and maxOutputTokens!
+    expect(healed?.contextWindow).toBeGreaterThan(0);
+    expect(healed?.maxOutputTokens).toBeGreaterThan(0);
+  } finally {
+    globalThis.fetch = origFetch;
+    globalThis.localStorage = origStorage;
+  }
+});

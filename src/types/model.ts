@@ -1,5 +1,19 @@
 // Type definitions for OBench (Artificial Analysis & OpenRouter-inspired Intelligence Workbench)
 
+export interface ModelEvaluations {
+  gpqa?: number | null;
+  hle?: number | null;
+  scicode?: number | null;
+  livecodebench?: number | null;
+  math500?: number | null;
+  aime25?: number | null;
+  ifbench?: number | null;
+  lcr?: number | null;
+  tau2?: number | null;
+  terminalbenchHard?: number | null;
+  mmluPro?: number | null;
+}
+
 export interface ModelRecord {
   id: string;
   name: string;
@@ -15,10 +29,12 @@ export interface ModelRecord {
   reasoningIndex: number | null;
   speedTps: number | null;
   latencyTtft: number | null;
+  latencyTtfat?: number | null;
   contextWindow: number | null;
   maxOutputTokens: number | null;
   modalities: string[];
   isOpenWeights: boolean;
+  evaluations?: ModelEvaluations | null;
 }
 
 export type CostBasis = 'blended' | 'input' | 'output' | 'cached' | 'batch';

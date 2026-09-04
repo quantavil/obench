@@ -58,13 +58,13 @@ function aaProxyPlugin() {
       server.middlewares.use(async (req, res, next) => {
         const requestUrl = proxyRequestUrl(req);
         const pathname = requestUrl.pathname;
-        if (req.method !== 'POST' || (pathname !== '/api/test-aa' && pathname !== '/api/sync')) {
+        if (!pathname.startsWith('/api/')) {
           next();
           return;
         }
 
         try {
-          const body = await readBody(req);
+          const body = (req.method !== 'GET' && req.method !== 'HEAD') ? await readBody(req) : undefined;
           const request = new Request(requestUrl, {
             method: req.method,
             headers: requestHeaders(req),
