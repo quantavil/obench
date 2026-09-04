@@ -1,0 +1,220 @@
+---
+// ModelDrawerBody.astro — Shared body partial for desktop and mobile inspector
+---
+
+<div class="flex-1 overflow-y-auto p-4 space-y-3.5 scroll-slim">
+  <!-- Key Gauges Grid -->
+  <div class="grid grid-cols-2 gap-2.5">
+    <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
+      <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5">Intelligence</span>
+      <div class="flex items-baseline gap-1.5">
+        <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="fmt1(inspectedModel.intelligence)"></span>
+        <span class="text-xs font-mono text-[var(--muted)]">IQ</span>
+      </div>
+    </div>
+
+    <div class="p-3 rounded-[10px] bg-[var(--field-bg)] border border-[var(--glass-brd)] shadow-2xs">
+      <span class="text-[10px] font-mono text-[var(--muted)] uppercase tracking-wider block mb-0.5" x-text="`Cost (${costBasisShortLabel(costBasis)})`"></span>
+      <div class="flex items-baseline gap-1.5">
+        <span class="text-xl font-bold font-mono tracking-tight text-[var(--strong)]" x-text="getModelCost(inspectedModel) !== null ? (getModelCost(inspectedModel) === 0 ? 'Free' : fmtCost(getModelCost(inspectedModel))) : '--'"></span>
+        <span class="text-xs font-mono text-[var(--muted)]" x-show="getModelCost(inspectedModel) !== null && getModelCost(inspectedModel) > 0">/ 1M</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Speed & Latency Telemetry -->
+  <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-2 shadow-2xs">
+    <div class="flex items-center justify-between border-b border-[var(--hair)] pb-1.5">
+      <span class="text-xs font-mono font-bold text-[var(--strong)] flex items-center gap-1.5">
+        <svg class="w-3.5 h-3.5 text-amber-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
+        <span>Speed & Latency</span>
+      </span>
+      <template x-if="inspectedModel.isOpenWeights">
+        <span class="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded bg-amber-500/15 text-amber-700 dark:text-amber-300">Open</span>
+      </template>
+    </div>
+
+    <div class="grid grid-cols-2 gap-2 text-xs font-mono">
+      <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
+        <span class="text-[10px] text-[var(--soft)] block">Speed</span>
+        <span class="text-sm font-bold text-[var(--strong)]" x-text="inspectedModel.speedTps ? `${inspectedModel.speedTps} tps` : '--'"></span>
+      </div>
+      <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
+        <span class="text-[10px] text-[var(--soft)] block">TTFT</span>
+        <span class="text-sm font-bold text-[var(--strong)]" x-text="inspectedModel.latencyTtft ? `${inspectedModel.latencyTtft}s` : '--'"></span>
+      </div>
+      <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
+        <span class="text-[10px] text-[var(--soft)] block">Context</span>
+        <span class="text-xs font-bold text-[var(--strong)]" x-text="fmtContext(inspectedModel.contextWindow)"></span>
+      </div>
+      <div class="p-2 rounded-lg bg-[var(--chip-bg)]">
+        <span class="text-[10px] text-[var(--soft)] block">Max Out</span>
+        <span class="text-xs font-bold text-[var(--strong)]" x-text="inspectedModel.maxOutputTokens ? fmtContext(inspectedModel.maxOutputTokens) : '--'"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Benchmark Sub-Scores -->
+  <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
+    <span class="text-xs font-mono font-bold text-[var(--strong)] block border-b border-[var(--hair)] pb-1.5">Benchmark Sub-Scores</span>
+    <div class="space-y-1.5 pt-1 text-xs font-mono">
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--soft)] flex items-center gap-1.5">
+          <svg class="w-3 h-3 text-emerald-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-code" /></svg>
+          <span>Coding</span>
+        </span>
+        <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.codingIndex !== null ? inspectedModel.codingIndex : '--'"></span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--soft)] flex items-center gap-1.5">
+          <svg class="w-3 h-3 text-blue-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-cpu" /></svg>
+          <span>Math</span>
+        </span>
+        <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.mathIndex !== null ? fmt1(inspectedModel.mathIndex) : '--'"></span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--soft)] flex items-center gap-1.5">
+          <svg class="w-3 h-3 text-purple-500 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-zap" /></svg>
+          <span>Reasoning</span>
+        </span>
+        <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.reasoningIndex !== null ? fmt1(inspectedModel.reasoningIndex) : '--'"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Pricing Details -->
+  <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-1.5 shadow-2xs">
+    <span class="text-xs font-mono font-bold text-[var(--strong)] block border-b border-[var(--hair)] pb-1.5">Pricing Details (per 1M tokens)</span>
+    <div class="space-y-1.5 pt-1 text-xs font-mono">
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--soft)]">Prompt / Input</span>
+        <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mInput !== null ? (inspectedModel.price1mInput === 0 ? 'Free' : `${fmtCost(inspectedModel.price1mInput)}/1M`) : '--'"></span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--soft)]">Completion / Output</span>
+        <span class="font-bold text-[var(--strong)]" x-text="inspectedModel.price1mOutput !== null ? (inspectedModel.price1mOutput === 0 ? 'Free' : `${fmtCost(inspectedModel.price1mOutput)}/1M`) : '--'"></span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--soft)]">Cached Read</span>
+        <span class="font-bold text-[var(--accent)]" x-text="inspectedModel.price1mCacheRead !== null ? `${fmtCost(inspectedModel.price1mCacheRead)}/1M` : '--'"></span>
+      </div>
+      <div class="flex items-center justify-between">
+        <span class="text-[var(--soft)]">Batch API (50% Off)</span>
+        <span class="font-bold text-amber-600 dark:text-amber-400" x-text="inspectedModel.price1mBatch !== null ? `${fmtCost(inspectedModel.price1mBatch)}/1M` : '--'"></span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Interactive Workload Cost Estimator -->
+  <div class="p-3.5 rounded-xl bg-[var(--field-bg)] border border-[var(--glass-brd)] space-y-3 shadow-2xs">
+    <div class="flex items-center justify-between border-b border-[var(--hair)] pb-1.5">
+      <span class="text-xs font-mono font-bold text-[var(--strong)]">Monthly Cost Simulator</span>
+      <div class="flex items-center gap-1">
+        <button
+          type="button"
+          @click="applyWorkloadPreset('chat')"
+          class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border border-[var(--glass-brd)] bg-[var(--chip-bg)] text-[var(--soft)] hover:text-[var(--strong)] hover:border-[var(--strong)] transition-all cursor-pointer"
+        >
+          Chat
+        </button>
+        <button
+          type="button"
+          @click="applyWorkloadPreset('agent')"
+          class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border border-[var(--glass-brd)] bg-[var(--chip-bg)] text-[var(--soft)] hover:text-[var(--strong)] hover:border-[var(--strong)] transition-all cursor-pointer"
+        >
+          Agent
+        </button>
+        <button
+          type="button"
+          @click="applyWorkloadPreset('rag')"
+          class="text-[10px] font-mono font-semibold px-2 py-0.5 rounded-md border border-[var(--glass-brd)] bg-[var(--chip-bg)] text-[var(--soft)] hover:text-[var(--strong)] hover:border-[var(--strong)] transition-all cursor-pointer"
+        >
+          RAG
+        </button>
+      </div>
+    </div>
+
+    <!-- Sliders with explicit labels and compatible steps -->
+    <div class="space-y-2 pt-0.5">
+      <div>
+        <div class="flex justify-between text-[11px] mb-1">
+          <span class="text-[var(--muted)]">Input tokens</span>
+          <span class="font-mono font-semibold text-[var(--strong)]" x-text="`${Number(calcInputTokens).toLocaleString()}`"></span>
+        </div>
+        <input
+          type="range"
+          min="100"
+          max="100000"
+          step="100"
+          x-model="calcInputTokens"
+          aria-label="Input tokens per request"
+          class="w-full accent-[var(--accent)] h-1 cursor-pointer"
+        />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-[11px] mb-1">
+          <span class="text-[var(--muted)]">Output tokens</span>
+          <span class="font-mono font-semibold text-[var(--strong)]" x-text="`${Number(calcOutputTokens).toLocaleString()}`"></span>
+        </div>
+        <input
+          type="range"
+          min="50"
+          max="16000"
+          step="50"
+          x-model="calcOutputTokens"
+          aria-label="Output tokens per request"
+          class="w-full accent-[var(--accent)] h-1 cursor-pointer"
+        />
+      </div>
+
+      <div>
+        <div class="flex justify-between text-[11px] mb-1">
+          <span class="text-[var(--muted)]">Requests / day</span>
+          <span class="font-mono font-semibold text-[var(--strong)]" x-text="Number(dailyRequests).toLocaleString()"></span>
+        </div>
+        <input
+          type="range"
+          min="100"
+          max="50000"
+          step="100"
+          x-model="dailyRequests"
+          aria-label="Requests per day"
+          class="w-full accent-[var(--accent)] h-1 cursor-pointer"
+        />
+      </div>
+    </div>
+
+    <!-- Monthly Projected Cost -->
+    <div class="p-2.5 rounded-[8px] bg-[var(--panel-muted)] border border-[var(--glass-brd)] flex items-center justify-between text-xs">
+      <span class="text-[var(--muted)] text-[11px]">Est. monthly cost</span>
+      <span class="font-mono font-bold text-xs text-[var(--strong)]" x-text="estimatedMonthlyCost"></span>
+    </div>
+  </div>
+
+  <!-- Model Identifier & 1-Click Copy -->
+  <div class="space-y-1">
+    <label class="text-[10px] font-mono text-[var(--soft)] uppercase tracking-wider block font-bold">Model Identifier</label>
+    <div class="flex items-center gap-1.5">
+      <input
+        type="text"
+        readonly
+        :value="inspectedModel.id"
+        aria-label="Model identifier string"
+        class="flex-1 h-8 px-2.5 text-xs font-mono rounded-lg bg-[var(--field-bg)] border border-[var(--field-border)] text-[var(--strong)] select-all"
+      />
+      <button
+        @click="copyToClipboard(inspectedModel.id, inspectedModel.id)"
+        class="btn btn-secondary h-8 px-2.5 text-xs font-mono font-bold flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs"
+        aria-label="Copy model ID"
+      >
+        <template x-if="copiedModelId === inspectedModel.id">
+          <span class="text-[var(--strong)] font-bold">Copied!</span>
+        </template>
+        <template x-if="copiedModelId !== inspectedModel.id">
+          <span>Copy</span>
+        </template>
+      </button>
+    </div>
+  </div>
+</div>

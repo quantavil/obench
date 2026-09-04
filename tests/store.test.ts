@@ -51,7 +51,6 @@ test('bench store initial state has default models, table view, empty comparedMo
   const store = bench();
   expect(Array.isArray(store.data.models)).toBe(true);
   expect(store.data.models.length).toBeGreaterThan(0);
-  expect(store.tab).toBe('models');
   expect(store.modelsViewMode).toBe('table');
   expect(store.showCompareCol).toBe(false);
   expect(store.comparedModelIds).toEqual([]);

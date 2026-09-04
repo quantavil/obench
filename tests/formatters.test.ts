@@ -46,6 +46,8 @@ describe('formatters', () => {
     expect(fmtContext(2000000)).toBe('2M');
     expect(fmtContext(128000)).toBe('128k');
     expect(fmtContext(200000)).toBe('200k');
-    expect(fmtContext(null)).toBe('128k');
+    expect(fmtContext(null)).toBe('--');
+    expect(fmtContext(undefined)).toBe('--');
+    expect(fmtContext(0)).toBe('--');
   });
 });

@@ -1,4 +1,4 @@
-// Brand colors and authentic SVG icons for AI providers
+// Brand colors and SVG icons for AI providers
 import type { ModelRecord, CapabilityBadge } from '../types/model';
 
 export const PROVIDER_COLORS: Record<string, string> = {
@@ -8,7 +8,7 @@ export const PROVIDER_COLORS: Record<string, string> = {
   meta: '#3b82f6',
   deepseek: '#0e7490',
   mistral: '#ea580c',
-  spacexai: '#dc2626',
+  xai: '#dc2626',
   'z ai': '#6366f1',
   kimi: '#2563eb',
   cohere: '#0d9488',
@@ -33,7 +33,7 @@ export const KNOWN_PROVIDERS: string[] = [
   'meta',
   'deepseek',
   'mistral',
-  'spacexai',
+  'xai',
   'alibaba',
   'nvidia',
   'amazon',
@@ -59,32 +59,51 @@ export function providerSvg(name: string | null | undefined, size = 16): string 
       return `<svg style="width:${size}px;height:${size}px;display:inline-block;" viewBox="0 0 24 24"><use href="#icon-provider-${k}" /></svg>`;
     }
   }
-  const initial = name.trim().charAt(0).toUpperCase();
+  const initial = escapeHtml(name.trim().charAt(0).toUpperCase());
   const bg = providerColor(name);
   return `<span style="display:inline-flex;align-items:center;justify-content:center;width:${size}px;height:${size}px;border-radius:4px;background:${bg}18;color:${bg};font-size:${Math.round(size * 0.6)}px;font-weight:800;line-height:1;">${initial}</span>`;
+}
+
+export function escapeHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+/**
+ * Capability heuristics shared by the capability filter (appStore) and the
+ * capability badges (extractModelBadges) so the two can never drift apart.
+ * Modalities from the dataset are authoritative; name tokens are the fallback
+ * for records without modality metadata.
+ */
+export function modelHasVision(model: ModelRecord): boolean {
+  if (model.modalities && model.modalities.includes('vision')) return true;
+  const name = (model.name || '').toLowerCase();
+  const idTokens = (model.id || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  return name.includes('vision') || name.includes('multimodal') || name.includes(' omni') || name.includes(' 4o') || idTokens.includes('vl') || idTokens.includes('vision');
+}
+
+export function modelHasReasoning(model: ModelRecord): boolean {
+  const name = (model.name || '').toLowerCase();
+  if (name.includes('reasoning') || name.includes('thinking')) return true;
+  const reasoningTokens = ['reasoning', 'thinking', 'effort', 'r1', 'o1', 'o3'];
+  const nameWords = new Set(name.split(/[^a-z0-9]+/).filter(Boolean));
+  const idTokens = (model.id || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+  return reasoningTokens.some((t) => nameWords.has(t) || idTokens.includes(t));
 }
 
 export function extractModelBadges(model: ModelRecord | null | undefined): CapabilityBadge[] {
   if (!model) return [];
   const badges: CapabilityBadge[] = [];
-  const name = (model.name || '').toLowerCase();
-  const id = (model.id || '').toLowerCase();
 
-  // Reasoning / Thinking badge - require word boundary or known model family token
-  const reasoningTokens = ['reasoning', 'thinking', 'effort', 'r1', 'o1', 'o3'];
-  const nameWords = new Set(name.split(/[^a-z0-9]+/).filter(Boolean));
-  const idTokens = id.split(/[^a-z0-9]+/).filter(Boolean);
-  const hasReasoningToken = reasoningTokens.some((t) => nameWords.has(t) || idTokens.includes(t) || name.includes(` ${t} `));
-  // keep legacy heuristic but guard short tokens against false positives like "pro1"
-  if (hasReasoningToken || name.includes('reasoning') || name.includes('thinking')) {
+  if (modelHasReasoning(model)) {
     badges.push({ label: 'Reasoning', type: 'reasoning' });
   }
 
-  // Vision / Multimodal badge
-  const hasVisionModal = model.modalities && model.modalities.includes('vision');
-  const visionByName = name.includes('vision') || name.includes('multimodal') || name.includes(' omni') || name.includes(' 4o');
-  const visionById = idTokens.includes('vl') || idTokens.includes('vision') || id === '4o' || id.includes('4o');
-  if (hasVisionModal || visionByName || visionById) {
+  if (modelHasVision(model)) {
     badges.push({ label: 'Vision', type: 'vision' });
   }
 

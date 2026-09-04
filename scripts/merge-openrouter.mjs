@@ -42,9 +42,9 @@ function providerFromOrId(orId) {
     'google': 'Google',
     'deepseek': 'DeepSeek',
     'qwen': 'Alibaba',
-    'x-ai': 'SpaceXAI',
+    'x-ai': 'xAI',
     'meta-llama': 'Meta',
-    'meta': 'AI Provider',
+    'meta': 'Meta',
     'cohere': 'Cohere',
     'mistralai': 'Mistral',
     'tencent': 'Tencent',
@@ -53,15 +53,15 @@ function providerFromOrId(orId) {
     'minimax': 'MiniMax',
     'moonshotai': 'Kimi',
     'nvidia': 'NVIDIA',
-    'inclusionai': 'AI Provider',
-    'liquid': 'Liquid',
-    'dots-studio': 'AI Provider',
+    'inclusionai': 'InclusionAI',
+    'liquid': 'Liquid AI',
+    'dots-studio': 'Dots Labs',
     'bytedance': 'Bytedance',
     'bytedance-seed': 'Bytedance',
     'alibaba': 'Alibaba',
     'xiaomi': 'Xiaomi',
     'stepfun': 'StepFun',
-    'inclusion': 'Inclusion',
+    'inclusion': 'InclusionAI',
   };
   if (map[pref]) return map[pref];
   // capitalize
@@ -76,24 +76,29 @@ async function fetchOr() {
 }
 
 function buildOrMaps(orData) {
-  const baseMap = new Map(); // norm -> record
+  const baseMap = new Map(); // norm -> record (paid variant wins)
+  const freeMap = new Map(); // norm -> :free variant
   const batchMap = new Map();
   const fullMap = new Map(); // id -> record
   for (const rec of orData) {
     const id = rec.id;
     if (String(id).startsWith('~')) continue; // skip deprecated aliases
-    if (String(id).includes(':free') && String(id).endsWith(':free')) {
-      // free variants are valid but we keep pricing 0; still map
-    }
     fullMap.set(id, rec);
-    const isBatch = id.endsWith(':batch');
+    const isFree = String(id).endsWith(':free');
+    const isBatch = String(id).endsWith(':batch');
     const norm = normLast(id);
     if (isBatch) {
       if (!batchMap.has(norm)) batchMap.set(norm, rec);
-    } else {
-      // prefer non-batch, and if multiple, keep first (OR appears sorted)
-      if (!baseMap.has(norm)) baseMap.set(norm, rec);
+    } else if (isFree) {
+      if (!freeMap.has(norm)) freeMap.set(norm, rec);
+    } else if (!baseMap.has(norm)) {
+      // if multiple paid variants share a slug, keep first (OR appears sorted)
+      baseMap.set(norm, rec);
     }
+  }
+  // free variants only fill gaps — they can never enrich a paid model with $0 pricing
+  for (const [norm, rec] of freeMap) {
+    if (!baseMap.has(norm)) baseMap.set(norm, rec);
   }
   return { baseMap, batchMap, fullMap };
 }

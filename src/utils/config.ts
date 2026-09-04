@@ -1,10 +1,10 @@
 // Static configuration for OBench (OpenRouter-inspired Artificial Analysis Explorer).
 import type { ModelViewMode, PlotMetricMode, PriceRangePreset, CostBasis, WorkloadPreset } from '../types/model';
 
-export const MODEL_VIEW_MODES: Array<{ id: ModelViewMode; label: string; icon: string }> = [
-  { id: 'table', label: 'Table', icon: 'icon-list' },
-  { id: 'plot', label: 'Scatter Plots', icon: 'icon-plot' },
-  { id: 'timeline', label: 'SOTA Timeline', icon: 'icon-calendar' },
+export const MODEL_VIEW_MODES: Array<{ id: ModelViewMode; label: string; icon: string; panelId: string }> = [
+  { id: 'table', label: 'Table', icon: 'icon-list', panelId: 'panel-table' },
+  { id: 'plot', label: 'Scatter Plots', icon: 'icon-plot', panelId: 'panel-plot' },
+  { id: 'timeline', label: 'SOTA Timeline', icon: 'icon-calendar', panelId: 'panel-plot' },
 ];
 
 export const PLOT_METRIC_MODES: Array<{ id: PlotMetricMode; label: string }> = [
@@ -28,8 +28,26 @@ export const SORT_OPTIONS: Array<{ id: string; label: string }> = [
   { id: 'output-desc', label: 'Output Price (Highest first)' },
   { id: 'context-desc', label: 'Context Window (Largest)' },
   { id: 'name-asc', label: 'Name (A to Z)' },
+  { id: 'name-desc', label: 'Name (Z to A)' },
   { id: 'date-desc', label: 'Release Date (Newest)' },
 ];
+
+/**
+ * Single source of truth for sortable table columns: `asc`/`desc` give the
+ * sortBy ids (null = column has no ascending variant), `fallback` is restored
+ * when toggling past the end. Drives toggleSort, getAriaSort and getSortIcon
+ * so they can never drift apart.
+ */
+export const SORT_COLUMN_MAP: Record<string, { asc: string | null; desc: string; initial?: 'asc' | 'desc'; fallback?: string }> = {
+  iq: { asc: 'iq-asc', desc: 'iq-desc', initial: 'desc' },
+  speed: { asc: 'speed-asc', desc: 'speed-desc', initial: 'desc' },
+  coding: { asc: null, desc: 'coding-desc', initial: 'desc', fallback: 'iq-desc' },
+  context: { asc: null, desc: 'context-desc', initial: 'desc', fallback: 'iq-desc' },
+  prompt: { asc: 'prompt-asc', desc: 'prompt-desc', initial: 'asc' },
+  output: { asc: 'output-asc', desc: 'output-desc', initial: 'asc' },
+  blended: { asc: 'price-asc', desc: 'price-desc', initial: 'asc' },
+  name: { asc: 'name-asc', desc: 'name-desc', initial: 'asc', fallback: 'iq-desc' },
+};
 
 export const PRICE_RANGES: PriceRangePreset[] = [
   { id: 'free', label: 'Free ($0.00)', min: 0, max: 0 },
@@ -49,29 +67,17 @@ export const CAPABILITY_FILTERS: Array<{ id: string; label: string }> = [
   { id: 'open-weights', label: 'Open Weights' },
 ];
 
-export const COST_BASIS_OPTIONS: Array<{ id: CostBasis; label: string }> = [
-  { id: 'blended', label: 'Blended 3:1' },
-  { id: 'input', label: 'Input Price' },
-  { id: 'output', label: 'Output Price' },
-  { id: 'cached', label: 'Prompt Caching' },
-  { id: 'batch', label: 'Batch (50% Off)' },
+export const COST_BASIS_OPTIONS: Array<{ id: CostBasis; label: string; shortLabel: string }> = [
+  { id: 'blended', label: 'Blended 3:1', shortLabel: 'Blended' },
+  { id: 'input', label: 'Input Price', shortLabel: 'Input' },
+  { id: 'output', label: 'Output Price', shortLabel: 'Output' },
+  { id: 'cached', label: 'Prompt Caching', shortLabel: 'Cached' },
+  { id: 'batch', label: 'Batch (50% Off)', shortLabel: 'Batch' },
 ];
 
-export const POPULAR_CREATORS: string[] = [
-  'Anthropic',
-  'OpenAI',
-  'Google',
-  'DeepSeek',
-  'Alibaba',
-  'Mistral',
-  'Meta',
-  'SpaceXAI',
-  'Z AI',
-  'NVIDIA',
-  'Cohere',
-  'Microsoft',
-  'Amazon',
-];
+export function costBasisShortLabel(basis: CostBasis): string {
+  return COST_BASIS_OPTIONS.find((o) => o.id === basis)?.shortLabel ?? basis;
+}
 
 export const WORKLOAD_PRESETS: WorkloadPreset[] = [
   { id: 'chat', label: 'Chat', inputTokens: 1500, outputTokens: 500 },

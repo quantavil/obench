@@ -1,21 +1,21 @@
 <!-- Header — OpenRouter Minimal Precision & Ergonomics -->
 <header class="sticky top-0 z-40 w-full border-b border-[var(--glass-brd)] bg-[var(--glass-bg)] backdrop-blur-xl">
-  <div class="mx-auto flex h-[56px] max-w-[1380px] items-center justify-between px-4 sm:px-8 gap-3">
+  <div class="mx-auto flex h-[56px] max-w-[1380px] items-center justify-between px-3 sm:px-8 gap-2 sm:gap-3">
 
     <!-- Left: Brand Logo & Title -->
-    <div class="flex items-center gap-3 shrink-0">
-      <a href="#models" @click="modelsViewMode = 'table'" class="flex items-center gap-2.5 group cursor-pointer" aria-label="OBench Home">
+    <div class="flex items-center gap-2.5 sm:gap-3 shrink-0">
+      <a href="#models" @click="modelsViewMode = 'table'" class="flex items-center gap-2 sm:gap-2.5 group cursor-pointer" aria-label="OBench Home">
         <div class="w-8 h-8 rounded-[9px] bg-[var(--accent)] text-[#090d10] flex items-center justify-center group-hover:scale-[1.02] transition-transform shadow-xs">
           <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
             <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z" />
           </svg>
         </div>
-        <div class="flex items-center gap-2">
+        <div class="flex items-center gap-1.5 sm:gap-2">
           <span class="font-bold text-[15px] tracking-tight text-[var(--strong)]">OBench</span>
           <span class="inline-flex items-center gap-1.5 rounded-full bg-[var(--chip-bg)] border border-[var(--glass-brd)] px-2 py-0.5 text-[11px] font-mono font-medium text-[var(--soft)]">
             <span class="w-1.5 h-1.5 rounded-full bg-[var(--accent)] animate-pulse"></span>
             <span x-text="`${data.models.length}`"></span>
-            <span class="text-[var(--muted)] hidden xs:inline">models</span>
+            <span class="text-[var(--muted)] hidden sm:inline">models</span>
           </span>
         </div>
       </a>
@@ -56,23 +56,23 @@
     </div>
 
     <!-- Right: Actions -->
-    <div class="flex items-center gap-2 shrink-0">
+    <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
 
       <!-- Compare Mode Toggle Button -->
       <button
-        @click="showCompareCol && comparedModelIds.length >= 2 && modelsViewMode === 'table' ? applyComparison() : toggleCompareCol()"
-        class="h-8 px-3 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs select-none"
+        @click="modelsViewMode === 'compare' ? (modelsViewMode = 'table') : (comparedModelIds.length >= 2 ? applyComparison() : toggleCompareCol())"
+        class="h-8 px-2.5 sm:px-3 text-xs font-semibold rounded-full border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs select-none"
         :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--accent)] text-[#090d10] border-[var(--accent)] shadow-xs' : 'border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] hover:bg-[var(--chip-bg)]'"
-        :title="showCompareCol ? 'Toggle VS comparison column' : 'Enable VS comparison mode'"
+        :title="modelsViewMode === 'compare' ? 'Exit comparison view' : (showCompareCol ? 'Hide comparison column' : 'Enable comparison mode')"
         aria-label="Toggle comparison"
         :aria-pressed="showCompareCol || modelsViewMode === 'compare'"
       >
         <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><use href="#icon-compare" /></svg>
-        <span>Compare</span>
+        <span class="hidden min-[400px]:inline" x-text="modelsViewMode === 'compare' ? 'Exit' : 'Compare'"></span>
         <template x-if="comparedModelIds.length > 0">
           <span
             class="min-w-4 h-4 px-1 rounded-full text-[10px] flex items-center justify-center font-bold font-mono transition-colors"
-            :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[var(--accent)] text-[#090d10]' : 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10]'"
+            :class="showCompareCol || modelsViewMode === 'compare' ? 'bg-[#090d10] text-[var(--accent)]' : 'bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10]'"
             x-text="comparedModelIds.length"
           ></span>
         </template>
@@ -83,12 +83,12 @@
         @click="syncModels()"
         :disabled="syncing"
         :aria-busy="syncing"
-        class="h-8 px-3 text-xs font-medium rounded-full border border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--chip-bg)] disabled:opacity-50 transition-colors shadow-2xs"
+        class="h-8 px-2.5 sm:px-3 text-xs font-medium rounded-full border border-[var(--glass-brd)] bg-[var(--panel)] text-[var(--strong)] flex items-center gap-1.5 cursor-pointer hover:bg-[var(--chip-bg)] disabled:opacity-50 transition-colors shadow-2xs"
         title="Sync live telemetry from Artificial Analysis"
         aria-label="Sync live telemetry"
       >
         <svg class="w-3.5 h-3.5" :class="syncing && 'animate-spin'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+          <use href="#icon-refresh" />
         </svg>
         <span class="hidden sm:inline font-medium" x-text="syncing ? 'Syncing…' : 'Sync'"></span>
       </button>

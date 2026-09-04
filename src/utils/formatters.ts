@@ -27,22 +27,6 @@ export function fmtDate(val: string | number | null | undefined): string {
   }
 }
 
-export function fmtDateTime(ts: number | null | undefined): string {
-  if (!ts) return '--';
-  try {
-    const d = new Date(ts);
-    return d.toLocaleString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    });
-  } catch {
-    return '--';
-  }
-}
-
 export function fmtDateTimeCompact(ts: any): string {
   if (!ts) return '';
   try {
@@ -63,7 +47,8 @@ export function fmtDateTimeCompact(ts: any): string {
 }
 
 export function fmtContext(tokens: number | null | undefined): string {
-  if (!tokens) return '128k';
+  // Unknown context stays unknown — never fabricate a default.
+  if (!tokens) return '--';
   if (tokens >= 1_000_000) {
     const m = tokens / 1_000_000;
     return `${Number.isInteger(m) ? m : m.toFixed(1).replace(/\.0$/, '')}M`;

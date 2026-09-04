@@ -259,7 +259,7 @@ def run():
             assert mob_nav.is_visible(), "Mobile bottom nav should be visible"
             nav_buttons = mob_nav.locator("button")
             btn_count = nav_buttons.count()
-            assert btn_count == 3, f"Expected 3 mobile nav buttons (Table/Plot/Timeline), got {btn_count}"
+            assert btn_count in (3, 4), f"Expected 3 or 4 mobile nav buttons (Table/Plot/Timeline/VS), got {btn_count}"
             for i in range(btn_count):
                 box = nav_buttons.nth(i).bounding_box()
                 assert box is not None and box["height"] >= 34 and box["width"] >= 40, f"Nav button {i} too small: {box}"

@@ -5,14 +5,17 @@ import {
   MODEL_VIEW_MODES,
   PLOT_METRIC_MODES,
   SORT_OPTIONS,
-  POPULAR_CREATORS,
+  SORT_COLUMN_MAP,
   CAPABILITY_FILTERS,
   WORKLOAD_PRESETS,
+  costBasisShortLabel,
 } from '../utils/config';
 import {
   providerColor,
   providerSvg,
   extractModelBadges,
+  modelHasVision,
+  modelHasReasoning,
 } from '../utils/providers';
 import {
   computeEfficiencyFrontier,
@@ -24,9 +27,7 @@ import {
   batchInput,
   batchOutput,
 } from '../utils/pricing';
-import {
-  comparisonWinners,
-} from './compare';
+import { comparisonWinners } from './compare';
 import {
   recordInspectorTrigger,
   restoreInspectorFocus,
@@ -37,14 +38,11 @@ import {
 import {
   fmt1,
   fmtCost,
-  fmtDate,
-  fmtDateTime,
-  fmtDateTimeCompact,
   fmtContext,
+  fmtDateTimeCompact,
 } from '../utils/formatters';
-import {
-  fetchAaModels,
-} from '../utils/aaSync';
+import { fetchAaModels } from '../utils/aaSync';
+import { mergeSyncedModels } from '../utils/syncMerge';
 import type { ModelRecord, CostBasis, ModelViewMode, PlotMetricMode } from '../types/model';
 
 let chartModulePromise: Promise<typeof import('../charts/echartsRender')> | null = null;
@@ -59,7 +57,25 @@ function loadCharts() {
   return chartModulePromise;
 }
 
+const PAGE_STEP = 200;
+
 export type ToastSeverity = 'info' | 'success' | 'warning' | 'error';
+
+/** Cost per request given the simulator state; shared by run + monthly estimates. */
+function estimateCost(model: ModelRecord, inputTokens: number, outputTokens: number, useCache: boolean, useBatch: boolean): number | null {
+  if (model.price1mInput === null && model.price1mOutput === null) return null;
+  let inputP = model.price1mInput;
+  let outputP = model.price1mOutput;
+  if (useCache) inputP = cachedInput(model);
+  if (useBatch) {
+    inputP = batchInput(model);
+    outputP = batchOutput(model);
+  }
+  if (inputP === null && outputP === null) return null;
+  const inRate = inputP ?? outputP ?? 0;
+  const outRate = outputP ?? inputP ?? 0;
+  return (inputTokens / 1_000_000) * inRate + (outputTokens / 1_000_000) * outRate;
+}
 
 export function bench() {
   return {
@@ -69,20 +85,15 @@ export function bench() {
     MODEL_VIEW_MODES,
     PLOT_METRIC_MODES,
     SORT_OPTIONS,
-    POPULAR_CREATORS,
     CAPABILITY_FILTERS,
     WORKLOAD_PRESETS,
 
     // ---------------------------------------------------- state
-    tab: 'models',
     inspectedModel: null as ModelRecord | null,
     copiedModelId: null as string | null,
 
-    loading: false,
     syncing: false,
-    syncProgress: '',
     search: '',
-    showAllProvidersModal: false,
     mobileFilterOpen: false,
 
     // Theme state
@@ -106,7 +117,7 @@ export function bench() {
     showCompareCol: false,
     comparedModelIds: [] as string[],
 
-    // Token Cost Calculator state (compatible step intervals)
+    // Token Cost Calculator state
     calcInputTokens: 1500,
     calcOutputTokens: 500,
     dailyRequests: 1000,
@@ -129,21 +140,15 @@ export function bench() {
     data: {
       models: (defaultModels as ModelRecord[]) || [],
       lastSyncedAt: null as number | null,
+      datasetStale: false,
     },
 
     // ---------------------------------------------------- init
     async init(this: any) {
-      // Load saved theme
       const savedTheme = localStorage.getItem('bench-theme');
-      if (savedTheme === 'light') {
-        document.documentElement.classList.remove('dark');
-        this.isDark = false;
-      } else {
-        document.documentElement.classList.add('dark');
-        this.isDark = true;
-      }
+      this.isDark = savedTheme !== 'light';
 
-      // Load saved models if present in localStorage (offline fallback, KV is primary now)
+      // Load saved models if present in localStorage (offline fallback, KV is primary)
       try {
         const stored = localStorage.getItem('bench-models');
         const storedSync = localStorage.getItem('bench-last-synced');
@@ -168,11 +173,11 @@ export function bench() {
         if (res.ok && json?.ok && Array.isArray(json.models) && json.models.length > 0) {
           const kvSyncedAt = typeof json.syncedAt === 'number' ? json.syncedAt : 0;
           const localSyncedAt = this.data.lastSyncedAt ?? 0;
-          const useKv =
-            kvSyncedAt >= localSyncedAt || (defaultModels as ModelRecord[]).length === 0;
+          const useKv = kvSyncedAt >= localSyncedAt || (defaultModels as ModelRecord[]).length === 0;
           if (useKv) {
             this.data.models = json.models as ModelRecord[];
-            if (kvSyncedAt) this.data.lastSyncedAt = kvSyncedAt;
+            this.data.lastSyncedAt = kvSyncedAt || null;
+            this.data.datasetStale = Boolean(json.stale);
             try {
               localStorage.setItem('bench-models', JSON.stringify(json.models));
               if (kvSyncedAt) localStorage.setItem('bench-last-synced', String(kvSyncedAt));
@@ -183,26 +188,8 @@ export function bench() {
         console.warn('Failed to fetch models from /api/models, keeping local/bundled fallback', e);
       }
 
-      // Handle URL hash routing
-      const applyHash = () => {
-        const h = (window.location.hash || '').replace(/^#\/?/, '').toLowerCase();
-        if (h === 'plot') {
-          this.modelsViewMode = 'plot';
-        } else if (h === 'timeline') {
-          this.modelsViewMode = 'timeline';
-        } else if (h === 'compare') {
-          this.modelsViewMode = 'compare';
-        } else if (h === 'table') {
-          this.modelsViewMode = 'table';
-        } else if (h === 'cards') {
-          // cards removed — redirect to table
-          this.modelsViewMode = 'table';
-        }
-      };
-      window.addEventListener('hashchange', applyHash);
-      applyHash();
+      this.initHashRouting();
 
-      // Keyboard shortcuts
       window.addEventListener('keydown', (e: KeyboardEvent) => {
         if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
           e.preventDefault();
@@ -211,13 +198,14 @@ export function bench() {
         if (e.key === 'Escape') {
           if (this.inspectedModel) {
             this.closeModelDrawer();
+          } else if (this.mobileFilterOpen) {
+            this.closeMobileFilter();
           } else if (this.search) {
             this.search = '';
           }
         }
       });
 
-      // Window resize handler (debounced chart resize + scroll-lock reconciliation)
       let resizeTimer: any = null;
       window.addEventListener('resize', () => {
         reconcileInspectorScrollLock(this.inspectedModel !== null);
@@ -241,6 +229,7 @@ export function bench() {
       });
 
       this.$watch('modelsViewMode', () => {
+        this.syncViewHash();
         this.updateOptimalModels();
         this.$nextTick(() => {
           this.mountCurrentChart();
@@ -281,6 +270,25 @@ export function bench() {
       });
     },
 
+    initHashRouting(this: any) {
+      const applyHash = () => {
+        const h = (window.location.hash || '').replace(/^#\/?/, '').toLowerCase();
+        if (h === 'plot' || h === 'timeline' || h === 'compare' || h === 'table') {
+          this.modelsViewMode = h;
+        }
+      };
+      window.addEventListener('hashchange', applyHash);
+      applyHash();
+    },
+
+    /** Keep the URL in sync so views are shareable and reload-safe. */
+    syncViewHash(this: any) {
+      const h = (window.location.hash || '').replace(/^#\/?/, '').toLowerCase();
+      if (h !== this.modelsViewMode) {
+        history.replaceState(null, '', `#${this.modelsViewMode}`);
+      }
+    },
+
     // ---------------------------------------------------- watchers & derivations
     get modelFilterKey(): string {
       const self = this as any;
@@ -318,34 +326,29 @@ export function bench() {
         if (hasProviderFilter && !providersSet.has(m.provider)) return false;
 
         if (q) {
-          const nameMatch = m.name && m.name.toLowerCase().includes(q);
-          const provMatch = m.provider && m.provider.toLowerCase().includes(q);
-          const idMatch = m.id && m.id.toLowerCase().includes(q);
-          if (!nameMatch && !provMatch && !idMatch) return false;
+          const haystacks = [
+            m.name && m.name.toLowerCase(),
+            m.provider && m.provider.toLowerCase(),
+            m.id && m.id.toLowerCase(),
+          ];
+          // Capability keywords — search matches what the filters can express
+          const isFree = (m.price1mInput === 0 && m.price1mOutput === 0);
+          if (q === 'free" || q === "free') { /* placeholder never reached */ }
+          const capabilityHaystack = [
+            modelHasVision(m) ? 'vision multimodal' : '',
+            modelHasReasoning(m) ? 'reasoning thinking' : '',
+            m.isOpenWeights ? 'open weights' : '',
+            isFree ? 'free' : '',
+          ].join(' ').toLowerCase();
+          const matches = haystacks.some((h: string) => h && h.includes(q)) || capabilityHaystack.includes(q);
+          if (!matches) return false;
         }
 
-        // Capability filter - precise matching without false negatives
         if (this.selectedCapability !== 'all') {
-          const nameTokens = new Set((m.name || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
-          const idTokens = new Set((m.id || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean));
-          const hasVision = m.modalities && m.modalities.includes('vision');
           if (this.selectedCapability === 'reasoning') {
-            const isReasoning =
-              nameTokens.has('reasoning') ||
-              nameTokens.has('thinking') ||
-              nameTokens.has('effort') ||
-              nameTokens.has('r1') ||
-              nameTokens.has('o1') ||
-              nameTokens.has('o3') ||
-              idTokens.has('r1') ||
-              idTokens.has('o1') ||
-              idTokens.has('o3') ||
-              (m.name || '').toLowerCase().includes('reasoning') ||
-              (m.name || '').toLowerCase().includes('thinking');
-            if (!isReasoning) return false;
+            if (!modelHasReasoning(m)) return false;
           } else if (this.selectedCapability === 'vision') {
-            const isVision = hasVision || nameTokens.has('vision') || nameTokens.has('multimodal') || nameTokens.has('vl') || idTokens.has('vl') || nameTokens.has('omni') || nameTokens.has('4o');
-            if (!isVision) return false;
+            if (!modelHasVision(m)) return false;
           } else if (this.selectedCapability === 'fast') {
             if ((m.speedTps ?? 0) < 100) return false;
           } else if (this.selectedCapability === 'long-ctx') {
@@ -368,86 +371,43 @@ export function bench() {
         return true;
       });
 
-      // Sorting
-      filtered.sort((a: ModelRecord, b: ModelRecord) => {
-        if (this.sortBy === 'iq-desc') {
-          return (b.intelligence ?? -1) - (a.intelligence ?? -1);
-        }
-        if (this.sortBy === 'iq-asc') {
-          return (a.intelligence ?? 999) - (b.intelligence ?? 999);
-        }
-        if (this.sortBy === 'speed-desc') {
-          return (b.speedTps ?? -1) - (a.speedTps ?? -1);
-        }
-        if (this.sortBy === 'speed-asc') {
-          return (a.speedTps ?? 9999) - (b.speedTps ?? 9999);
-        }
-        if (this.sortBy === 'ttft-asc') {
-          const ttftA = a.latencyTtft ?? Infinity;
-          const ttftB = b.latencyTtft ?? Infinity;
-          return ttftA - ttftB;
-        }
-        if (this.sortBy === 'coding-desc') {
-          return (b.codingIndex ?? -1) - (a.codingIndex ?? -1);
-        }
-        if (this.sortBy === 'context-desc') {
-          return (b.contextWindow ?? 0) - (a.contextWindow ?? 0);
-        }
-        if (this.sortBy === 'price-asc') {
-          const costA = calculateModelCost(a, this.costBasis) ?? Infinity;
-          const costB = calculateModelCost(b, this.costBasis) ?? Infinity;
-          return costA - costB;
-        }
-        if (this.sortBy === 'price-desc') {
-          const costA = calculateModelCost(a, this.costBasis) ?? -1;
-          const costB = calculateModelCost(b, this.costBasis) ?? -1;
-          return costB - costA;
-        }
-        if (this.sortBy === 'prompt-asc') {
-          const pA = a.price1mInput ?? Infinity;
-          const pB = b.price1mInput ?? Infinity;
-          return pA - pB;
-        }
-        if (this.sortBy === 'prompt-desc') {
-          const pA = a.price1mInput ?? -1;
-          const pB = b.price1mInput ?? -1;
-          return pB - pA;
-        }
-        if (this.sortBy === 'output-asc') {
-          const pA = a.price1mOutput ?? Infinity;
-          const pB = b.price1mOutput ?? Infinity;
-          return pA - pB;
-        }
-        if (this.sortBy === 'output-desc') {
-          const pA = a.price1mOutput ?? -1;
-          const pB = b.price1mOutput ?? -1;
-          return pB - pA;
-        }
-        if (this.sortBy === 'name-asc') {
-          return (a.name || '').localeCompare(b.name || '');
-        }
-        if (this.sortBy === 'date-desc') {
-          return (Date.parse(b.releasedAt || '0') || 0) - (Date.parse(a.releasedAt || '0') || 0);
-        }
-        return (b.intelligence ?? -1) - (a.intelligence ?? -1);
-      });
+      filtered.sort((a: ModelRecord, b: ModelRecord) => this.sortComparator(a, b));
 
       this.cachedFilteredModels = filtered;
-      this.cachedModelRows = filtered.map((m: ModelRecord) => ({
-        model: m,
-      }));
+      this.cachedModelRows = filtered.map((m: ModelRecord) => ({ model: m }));
       this.cachedPaginatedModels = this.cachedModelRows.slice(0, this.modelsPageSize);
 
       let best: ModelRecord | null = null;
       for (const m of filtered) {
-        if (m.intelligence != null) {
-          if (!best || (best.intelligence != null && m.intelligence > best.intelligence)) {
-            best = m;
-          }
+        if (m.intelligence != null && (best?.intelligence == null || m.intelligence > best.intelligence)) {
+          best = m;
         }
       }
       this.cachedBestModel = best;
       this.updateOptimalModels();
+    },
+
+    sortComparator(this: any, a: ModelRecord, b: ModelRecord): number {
+      const costOf = (m: ModelRecord) => calculateModelCost(m, this.costBasis);
+      switch (this.sortBy) {
+        case 'iq-asc': return (a.intelligence ?? 999) - (b.intelligence ?? 999);
+        case 'speed-desc': return (b.speedTps ?? -1) - (a.speedTps ?? -1);
+        case 'speed-asc': return (a.speedTps ?? 9999) - (b.speedTps ?? 9999);
+        case 'ttft-asc': return (a.latencyTtft ?? Infinity) - (b.latencyTtft ?? Infinity);
+        case 'coding-desc': return (b.codingIndex ?? -1) - (a.codingIndex ?? -1);
+        case 'context-desc': return (b.contextWindow ?? 0) - (a.contextWindow ?? 0);
+        case 'price-asc': return (costOf(a) ?? Infinity) - (costOf(b) ?? Infinity);
+        case 'price-desc': return (costOf(b) ?? -1) - (costOf(a) ?? -1);
+        case 'prompt-asc': return (a.price1mInput ?? Infinity) - (b.price1mInput ?? Infinity);
+        case 'prompt-desc': return (b.price1mInput ?? -1) - (a.price1mInput ?? -1);
+        case 'output-asc': return (a.price1mOutput ?? Infinity) - (b.price1mOutput ?? Infinity);
+        case 'output-desc': return (b.price1mOutput ?? -1) - (a.price1mOutput ?? -1);
+        case 'name-asc': return (a.name || '').localeCompare(b.name || '');
+        case 'name-desc': return (b.name || '').localeCompare(a.name || '');
+        case 'date-desc': return (Date.parse(b.releasedAt || '0') || 0) - (Date.parse(a.releasedAt || '0') || 0);
+        case 'iq-desc':
+        default: return (b.intelligence ?? -1) - (a.intelligence ?? -1);
+      }
     },
 
     updateOptimalModels(this: any) {
@@ -469,10 +429,11 @@ export function bench() {
         const isDark = document.documentElement.classList.contains('dark');
         const charts = await loadCharts();
         const render = () => {
+          const openModel = (m: ModelRecord) => this.openModelDrawer(m, null);
           if (this.modelsViewMode === 'plot') {
-            charts.renderEChartsPlot(chartEl, this.filteredModels, this.costBasis, this.plotMetric, isDark, this.plotScale);
+            charts.renderEChartsPlot(chartEl, this.filteredModels, this.costBasis, this.plotMetric, isDark, this.plotScale, openModel);
           } else if (this.modelsViewMode === 'timeline') {
-            charts.renderEChartsTimeline(chartEl, this.filteredModels, isDark);
+            charts.renderEChartsTimeline(chartEl, this.filteredModels, isDark, openModel);
           }
         };
         if (typeof window !== 'undefined' && window.requestAnimationFrame) {
@@ -480,84 +441,44 @@ export function bench() {
         } else {
           render();
         }
-      } else {
-        if (chartModulePromise) {
-          const charts = await loadCharts();
-          charts.destroyActiveChart();
-        }
+      } else if (chartModulePromise) {
+        const charts = await loadCharts();
+        charts.destroyActiveChart();
       }
     },
 
-    // Table Header Sort Toggle
+    async resetPlotZoom(this: any) {
+      const charts = await loadCharts();
+      charts.resetActiveChartZoom();
+    },
+
+    // Table header sort toggle, driven by SORT_COLUMN_MAP
     toggleSort(this: any, col: string) {
-      if (col === 'iq') {
-        this.sortBy = this.sortBy === 'iq-desc' ? 'iq-asc' : 'iq-desc';
-      } else if (col === 'speed') {
-        this.sortBy = this.sortBy === 'speed-desc' ? 'speed-asc' : 'speed-desc';
-      } else if (col === 'coding') {
-        this.sortBy = this.sortBy === 'coding-desc' ? 'iq-desc' : 'coding-desc';
-      } else if (col === 'context') {
-        this.sortBy = this.sortBy === 'context-desc' ? 'iq-desc' : 'context-desc';
-      } else if (col === 'prompt') {
-        this.sortBy = this.sortBy === 'prompt-asc' ? 'prompt-desc' : 'prompt-asc';
-      } else if (col === 'output') {
-        this.sortBy = this.sortBy === 'output-asc' ? 'output-desc' : 'output-asc';
-      } else if (col === 'blended') {
-        this.sortBy = this.sortBy === 'price-asc' ? 'price-desc' : 'price-asc';
-      } else if (col === 'name') {
-        this.sortBy = this.sortBy === 'name-asc' ? 'iq-desc' : 'name-asc';
+      const spec = SORT_COLUMN_MAP[col];
+      if (!spec) return;
+      const initial = spec.initial ?? 'desc';
+      if (this.sortBy === spec.desc) {
+        this.sortBy = spec.asc ?? spec.fallback ?? spec.desc;
+      } else if (spec.asc && this.sortBy === spec.asc) {
+        this.sortBy = spec.desc;
+      } else {
+        this.sortBy = initial === 'asc' && spec.asc ? spec.asc : spec.desc;
       }
     },
 
     getAriaSort(this: any, col: string): 'ascending' | 'descending' | 'none' {
-      if (col === 'iq') {
-        if (this.sortBy === 'iq-desc') return 'descending';
-        if (this.sortBy === 'iq-asc') return 'ascending';
-      } else if (col === 'speed') {
-        if (this.sortBy === 'speed-desc') return 'descending';
-        if (this.sortBy === 'speed-asc') return 'ascending';
-      } else if (col === 'coding') {
-        if (this.sortBy === 'coding-desc') return 'descending';
-      } else if (col === 'context') {
-        if (this.sortBy === 'context-desc') return 'descending';
-      } else if (col === 'prompt') {
-        if (this.sortBy === 'prompt-asc') return 'ascending';
-        if (this.sortBy === 'prompt-desc') return 'descending';
-      } else if (col === 'output') {
-        if (this.sortBy === 'output-asc') return 'ascending';
-        if (this.sortBy === 'output-desc') return 'descending';
-      } else if (col === 'blended') {
-        if (this.sortBy === 'price-asc') return 'ascending';
-        if (this.sortBy === 'price-desc') return 'descending';
-      } else if (col === 'name') {
-        if (this.sortBy === 'name-asc') return 'ascending';
-      }
+      const spec = SORT_COLUMN_MAP[col];
+      if (!spec) return 'none';
+      if (this.sortBy === spec.desc) return 'descending';
+      if (spec.asc && this.sortBy === spec.asc) return 'ascending';
       return 'none';
     },
 
     getSortIcon(this: any, col: string): string {
-      if (col === 'iq') {
-        if (this.sortBy === 'iq-desc') return '↓';
-        if (this.sortBy === 'iq-asc') return '↑';
-      } else if (col === 'speed') {
-        if (this.sortBy === 'speed-desc') return '↓';
-        if (this.sortBy === 'speed-asc') return '↑';
-      } else if (col === 'coding') {
-        if (this.sortBy === 'coding-desc') return '↓';
-      } else if (col === 'context') {
-        if (this.sortBy === 'context-desc') return '↓';
-      } else if (col === 'prompt') {
-        if (this.sortBy === 'prompt-asc') return '↑';
-        if (this.sortBy === 'prompt-desc') return '↓';
-      } else if (col === 'output') {
-        if (this.sortBy === 'output-asc') return '↑';
-        if (this.sortBy === 'output-desc') return '↓';
-      } else if (col === 'blended') {
-        if (this.sortBy === 'price-asc') return '↑';
-        if (this.sortBy === 'price-desc') return '↓';
-      } else if (col === 'name') {
-        if (this.sortBy === 'name-asc') return '↑';
-      }
+      const spec = SORT_COLUMN_MAP[col];
+      if (!spec) return '';
+      if (this.sortBy === spec.desc) return '↓';
+      if (spec.asc && this.sortBy === spec.asc) return '↑';
       return '';
     },
 
@@ -585,19 +506,25 @@ export function bench() {
         .map(([provider]) => provider);
     },
 
-    get filteredModels(): ModelRecord[] {
+    get providerCount(): (name: string) => number {
       const self = this as any;
-      return self.cachedFilteredModels || self.cachedModelRows.map((r: any) => r.model);
+      const counts = new Map<string, number>();
+      for (const m of (self.data.models || [])) {
+        if (m && m.provider) counts.set(m.provider, (counts.get(m.provider) || 0) + 1);
+      }
+      return (name: string) => counts.get(name) ?? 0;
+    },
+
+    get filteredModels(): ModelRecord[] {
+      return (this as any).cachedFilteredModels || [];
     },
 
     get rankedModelsByIntelligence(): Array<{ model: ModelRecord }> {
-      const self = this as any;
-      return self.cachedModelRows;
+      return (this as any).cachedModelRows;
     },
 
     get paginatedModels(): Array<{ model: ModelRecord }> {
-      const self = this as any;
-      return self.cachedPaginatedModels || self.cachedModelRows.slice(0, self.modelsPageSize);
+      return (this as any).cachedPaginatedModels || [];
     },
 
     get comparedModels(): ModelRecord[] {
@@ -608,13 +535,11 @@ export function bench() {
     },
 
     get bestModelInRange(): ModelRecord | null {
-      const self = this as any;
-      return self.cachedBestModel;
+      return (this as any).cachedBestModel;
     },
 
     get optimalModels(): ModelRecord[] {
-      const self = this as any;
-      return self.cachedOptimalModels || [];
+      return (this as any).cachedOptimalModels || [];
     },
 
     get comparisonWinners(): Record<string, { iq: boolean; speed: boolean; cost: boolean; ttft: boolean }> {
@@ -622,63 +547,27 @@ export function bench() {
       return comparisonWinners(self.comparedModels, self.costBasis);
     },
 
+    get costBasisLabel(): string {
+      return costBasisShortLabel(this.costBasis);
+    },
+
     get estimatedRunCost(): string {
       const self = this as any;
-      if (!self.inspectedModel) return '$0.00';
-      if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
-        return '--';
-      }
-      let inputP = self.inspectedModel.price1mInput;
-      let outputP = self.inspectedModel.price1mOutput;
-
-      if (self.usePromptCaching) {
-        inputP = cachedInput(self.inspectedModel);
-      }
-      if (self.useBatchPricing) {
-        inputP = batchInput(self.inspectedModel);
-        outputP = batchOutput(self.inspectedModel);
-      }
-
-      if (inputP === null && outputP === null) {
-        return '--';
-      }
-
-      const inRate = inputP ?? outputP ?? 0;
-      const outRate = outputP ?? inputP ?? 0;
-
-      const cost = (self.calcInputTokens / 1_000_000) * inRate + (self.calcOutputTokens / 1_000_000) * outRate;
-      if (cost === 0) return '$0.00';
+      if (!self.inspectedModel) return '--';
+      const cost = estimateCost(self.inspectedModel, Number(self.calcInputTokens), Number(self.calcOutputTokens), self.usePromptCaching, self.useBatchPricing);
+      if (cost === null) return '--';
+      if (cost === 0) return 'Free';
       if (cost < 0.0001) return '< $0.0001';
       return `$${cost.toFixed(4)}`;
     },
 
     get estimatedMonthlyCost(): string {
       const self = this as any;
-      if (!self.inspectedModel) return '$0.00';
-      if (self.inspectedModel.price1mInput === null && self.inspectedModel.price1mOutput === null) {
-        return '--';
-      }
-      let inputP = self.inspectedModel.price1mInput;
-      let outputP = self.inspectedModel.price1mOutput;
-
-      if (self.usePromptCaching) {
-        inputP = cachedInput(self.inspectedModel);
-      }
-      if (self.useBatchPricing) {
-        inputP = batchInput(self.inspectedModel);
-        outputP = batchOutput(self.inspectedModel);
-      }
-
-      if (inputP === null && outputP === null) {
-        return '--';
-      }
-
-      const inRate = inputP ?? outputP ?? 0;
-      const outRate = outputP ?? inputP ?? 0;
-
-      const perReq = (self.calcInputTokens / 1_000_000) * inRate + (self.calcOutputTokens / 1_000_000) * outRate;
-      if (perReq === 0) return '$0.00';
-      const monthly = perReq * self.dailyRequests * 30;
+      if (!self.inspectedModel) return '--';
+      const cost = estimateCost(self.inspectedModel, Number(self.calcInputTokens), Number(self.calcOutputTokens), self.usePromptCaching, self.useBatchPricing);
+      if (cost === null) return '--';
+      if (cost === 0) return 'Free';
+      const monthly = cost * Number(self.dailyRequests) * 30;
       return `$${monthly.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
     },
 
@@ -688,7 +577,11 @@ export function bench() {
       this.inspectedModel = model;
       reconcileInspectorScrollLock(true);
       this.$nextTick(() => {
-        const dialog = document.querySelector("div[role='dialog']") as HTMLElement;
+        // Desktop docked panel vs mobile bottom-sheet dialog
+        const isDesktop = window.matchMedia('(min-width: 1024px)').matches;
+        const dialog = isDesktop
+          ? (document.getElementById('inspector-panel') as HTMLElement | null)
+          : (document.querySelector("div[role='dialog']") as HTMLElement | null);
         if (dialog) {
           focusFirstElement(dialog);
         }
@@ -705,20 +598,11 @@ export function bench() {
       trapFocus(event, dialog);
     },
 
-    applyWorkloadPreset(this: any, preset: 'chat' | 'agent' | 'rag' | 'batch') {
-      if (preset === 'chat') {
-        this.calcInputTokens = 1500;
-        this.calcOutputTokens = 500;
-      } else if (preset === 'agent') {
-        this.calcInputTokens = 15000;
-        this.calcOutputTokens = 2500;
-      } else if (preset === 'rag') {
-        this.calcInputTokens = 64000;
-        this.calcOutputTokens = 3500;
-      } else if (preset === 'batch') {
-        this.calcInputTokens = 100000;
-        this.calcOutputTokens = 10000;
-      }
+    applyWorkloadPreset(this: any, preset: string) {
+      const p = WORKLOAD_PRESETS.find((w) => w.id === preset);
+      if (!p) return;
+      this.calcInputTokens = p.inputTokens;
+      this.calcOutputTokens = p.outputTokens;
     },
 
     toggleProvider(this: any, p: string) {
@@ -745,9 +629,6 @@ export function bench() {
     toggleCompareCol(this: any) {
       this.showCompareCol = !this.showCompareCol;
       if (this.showCompareCol && this.modelsViewMode !== 'table') {
-        this.modelsViewMode = 'table';
-      }
-      if (!this.showCompareCol && this.modelsViewMode === 'compare') {
         this.modelsViewMode = 'table';
       }
     },
@@ -784,8 +665,9 @@ export function bench() {
       this.toast('Comparison cleared', 'info');
     },
 
+    /** Reveal the next PAGE_STEP rows instead of dumping every model at once. */
     loadMoreModels(this: any) {
-      this.modelsPageSize = Infinity;
+      this.modelsPageSize = Math.min(this.modelsPageSize + PAGE_STEP, this.cachedModelRows.length);
       this.cachedPaginatedModels = this.cachedModelRows.slice(0, this.modelsPageSize);
     },
 
@@ -819,10 +701,8 @@ export function bench() {
       try {
         if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
           await navigator.clipboard.writeText(text);
-          done();
-        } else {
-          done();
         }
+        done();
       } catch {
         done();
       }
@@ -845,31 +725,13 @@ export function bench() {
     async syncModels(this: any) {
       if (this.syncing) return;
       this.syncing = true;
-      this.syncProgress = 'Syncing models from Artificial Analysis via Cloudflare...';
       try {
-        const models = await fetchAaModels();
-        if (Array.isArray(models) && models.length > 0) {
-          const prevById = new Map<string, ModelRecord>(
-            (this.data.models as ModelRecord[]).map((m) => [m.id, m]),
-          );
-          const merged: ModelRecord[] = (models as ModelRecord[]).map((m) => {
-            const prev = prevById.get(m.id) as ModelRecord | undefined;
-            if (!prev) return m;
-            return {
-              ...m,
-              codingIndex: (m as any).codingIndex ?? prev.codingIndex ?? null,
-              mathIndex: (m as any).mathIndex ?? prev.mathIndex ?? null,
-              reasoningIndex: (m as any).reasoningIndex ?? prev.reasoningIndex ?? null,
-              speedTps: (m as any).speedTps ?? prev.speedTps ?? null,
-              latencyTtft: (m as any).latencyTtft ?? prev.latencyTtft ?? null,
-              contextWindow: (m as any).contextWindow ?? prev.contextWindow ?? null,
-              maxOutputTokens: (m as any).maxOutputTokens ?? prev.maxOutputTokens ?? null,
-              price1mCacheRead: (m as any).price1mCacheRead ?? prev.price1mCacheRead ?? null,
-              price1mBatch: (m as any).price1mBatch ?? prev.price1mBatch ?? null,
-            } as ModelRecord;
-          });
+        const freshModels = await fetchAaModels();
+        if (Array.isArray(freshModels) && freshModels.length > 0) {
+          const merged = mergeSyncedModels(this.data.models as ModelRecord[], freshModels as ModelRecord[]);
           this.data.models = merged;
           this.data.lastSyncedAt = Date.now();
+          this.data.datasetStale = false;
           try {
             localStorage.setItem('bench-models', JSON.stringify(merged));
             localStorage.setItem('bench-last-synced', String(this.data.lastSyncedAt));
@@ -892,20 +754,7 @@ export function bench() {
         );
       } finally {
         this.syncing = false;
-        this.syncProgress = '';
       }
-    },
-
-    resetToDefaultData(this: any) {
-      this.data.models = defaultModels;
-      this.data.lastSyncedAt = null;
-      localStorage.removeItem('bench-models');
-      localStorage.removeItem('bench-last-synced');
-      this.updateModelRows();
-      this.$nextTick(() => {
-        this.mountCurrentChart();
-      });
-      this.toast(`Reset to default dataset (${defaultModels.length} models)`, 'success');
     },
 
     // ---------------------------------------------------- formatting & color helpers
@@ -933,20 +782,16 @@ export function bench() {
       return fmt1(val);
     },
 
-    fmtDate(ts: any) {
-      return fmtDate(ts);
-    },
-
-    fmtDateTime(ts: any) {
-      return fmtDateTime(ts);
-    },
-
     fmtDateTimeCompact(ts: any) {
       return fmtDateTimeCompact(ts);
     },
 
     fmtContext(tokens: number | null | undefined) {
       return fmtContext(tokens);
+    },
+
+    costBasisShortLabel(basis: any) {
+      return costBasisShortLabel(basis);
     },
 
     toast(this: any, msg: string, severity: ToastSeverity = 'info') {

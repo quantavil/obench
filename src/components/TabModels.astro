@@ -84,7 +84,7 @@ import ModelDrawer from './ModelDrawer.astro';
           @click="modelsViewMode = m.id"
           role="tab"
           :aria-selected="modelsViewMode === m.id"
-          :aria-controls="`panel-${m.id}`"
+          :aria-controls="m.panelId"
           class="seg-btn px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap"
           :class="modelsViewMode === m.id ? 'seg-btn-on' : ''"
           :title="m.label"
@@ -491,7 +491,7 @@ import ModelDrawer from './ModelDrawer.astro';
           <div>
             <!-- A. DESKTOP VIEW: High-Density Precision Table (hidden on mobile) -->
             <div class="hidden md:block rounded-[12px] border border-[var(--glass-brd)] bg-[var(--panel)] overflow-hidden shadow-xs">
-              <div class="overflow-x-auto scroll-slim">
+              <div class="overflow-x-auto scroll-slim max-h-[calc(100vh-180px)] overflow-y-auto">
                 <table class="w-full text-left text-xs border-collapse">
                   <thead class="sticky top-0 z-10">
                     <tr class="border-b border-[var(--hair)] bg-[var(--panel-muted)]/95 backdrop-blur-md text-[var(--muted)] font-medium text-[11px] tracking-wide">
@@ -596,7 +596,7 @@ import ModelDrawer from './ModelDrawer.astro';
                           aria-label="Sort by cost"
                         >
                           <div class="flex items-center justify-end gap-1">
-                            <span x-text="`Cost (${costBasis})`"></span>
+                            <span x-text="`Cost (${costBasisLabel})`"></span>
                             <span class="font-mono text-xs text-[var(--strong)]" x-text="getSortIcon('blended')"></span>
                           </div>
                         </button>
@@ -755,14 +755,12 @@ import ModelDrawer from './ModelDrawer.astro';
             <!-- B. MOBILE VIEW: Stacked Model Cards (clean, vertical, card-first on mobile) -->
             <div class="md:hidden space-y-3">
               <template x-for="(row, idx) in paginatedModels" :key="row.model.id">
-                <div
+                <article
                   @click="openModelDrawer(row.model, $el)"
                   @keydown.enter.prevent="openModelDrawer(row.model, $el)"
-                  @keydown.space.prevent="openModelDrawer(row.model, $el)"
                   tabindex="0"
-                  role="button"
                   :aria-label="`Inspect ${row.model.name}`"
-                  class="model-card p-4 flex flex-col gap-3 cursor-pointer group shadow-2xs"
+                  class="model-card p-4 flex flex-col gap-3 cursor-pointer group shadow-2xs focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
                 >
                   <!-- Card Header: Full Width Avatar + Provider/ID + Name (unconstrained width) -->
                   <div class="flex items-start gap-3 min-w-0">
@@ -820,28 +818,28 @@ import ModelDrawer from './ModelDrawer.astro';
                       </template>
                     </div>
                     <div class="flex items-center gap-1.5 shrink-0">
-                      <!-- 1-Tap Compare Button (compact icon-only) -->
+                      <!-- 1-Tap Compare Button (touch-friendly min 36px target) -->
                       <button
                         @click.stop="toggleCompareModel(row.model)"
-                        class="w-6 h-6 rounded-md border flex items-center justify-center transition-all shadow-2xs cursor-pointer"
+                        class="w-9 h-9 min-h-[36px] min-w-[36px] rounded-lg border flex items-center justify-center transition-all shadow-2xs cursor-pointer"
                         :class="isModelCompared(row.model) ? 'bg-[var(--accent)] border-[var(--accent)] text-[#090d10]' : 'border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--muted)] hover:text-[var(--strong)]'"
                         :aria-label="`Compare ${row.model.name}`"
                         :title="isModelCompared(row.model) ? 'Remove from comparison' : 'Add to comparison'"
                       >
-                        <svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <use :href="isModelCompared(row.model) ? '#icon-check' : '#icon-compare'" />
                         </svg>
                       </button>
 
-                      <!-- Inspect Chevron (compact icon-only) -->
-                      <div class="w-6 h-6 rounded-md flex items-center justify-center text-[var(--muted)] group-hover:text-[var(--strong)] transition-colors" aria-hidden="true">
-                        <svg class="w-3.5 h-3.5 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                      <!-- Inspect Chevron -->
+                      <div class="w-8 h-8 rounded-lg flex items-center justify-center text-[var(--muted)] group-hover:text-[var(--strong)] transition-colors" aria-hidden="true">
+                        <svg class="w-4 h-4 group-hover:translate-x-0.5 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                           <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
                         </svg>
                       </div>
                     </div>
                   </div>
-                </div>
+                </article>
               </template>
             </div>
 
@@ -854,9 +852,9 @@ import ModelDrawer from './ModelDrawer.astro';
                 <span class="text-xs font-mono text-[var(--soft)] sm:hidden">
                   <b class="text-[var(--strong)]" x-text="paginatedModels.length"></b> / <b class="text-[var(--strong)]" x-text="rankedModelsByIntelligence.length"></b>
                 </span>
-                <button @click="loadMoreModels()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-xs shrink-0" aria-label="Load remaining models">
-                  <span>Load all</span>
-                  <span class="font-mono font-bold" x-text="`+${rankedModelsByIntelligence.length - paginatedModels.length}`"></span>
+                <button @click="loadMoreModels()" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[var(--strong)] text-[var(--bg)] dark:text-[#090d10] text-xs font-semibold hover:opacity-90 active:scale-[0.98] transition-all cursor-pointer shadow-xs shrink-0" aria-label="Load more models">
+                  <span>Load more</span>
+                  <span class="font-mono font-bold" x-text="`+${Math.min(100, rankedModelsByIntelligence.length - paginatedModels.length)}`"></span>
                   <svg class="w-3.5 h-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
                 </button>
               </div>
@@ -902,7 +900,16 @@ import ModelDrawer from './ModelDrawer.astro';
               </div>
             </template>
 
-            <div class="flex items-center gap-3 text-xs font-mono text-[var(--soft)] shrink-0">
+            <div class="flex items-center gap-2.5 text-xs font-mono text-[var(--soft)] shrink-0">
+              <button
+                type="button"
+                @click="resetPlotZoom()"
+                class="px-2.5 py-1 text-xs font-medium rounded-md border border-[var(--glass-brd)] bg-[var(--field-bg)] text-[var(--soft)] hover:text-[var(--strong)] hover:border-[var(--strong)] cursor-pointer transition-all shadow-2xs"
+                title="Reset zoom to default bounds"
+                aria-label="Reset chart zoom"
+              >
+                Reset zoom
+              </button>
               <span class="hidden sm:inline text-[var(--muted)]">Scrollwheel / pinch to zoom</span>
               <span class="font-bold text-[var(--strong)]" x-text="`${filteredModels.length} plotted`"></span>
             </div>
@@ -1158,11 +1165,28 @@ import ModelDrawer from './ModelDrawer.astro';
       </div>
 
       <!-- Telemetry Footer Strip -->
-      <div class="flex items-center justify-between text-[11px] text-[var(--soft)] font-mono pt-4 border-t border-[var(--hair)]">
-        <span>Data provided via Artificial Analysis Explorer</span>
-        <template x-if="data.lastSyncedAt">
-          <span x-text="`Last synced: ${fmtDateTimeCompact(data.lastSyncedAt)}`"></span>
-        </template>
+      <div class="flex flex-wrap items-center justify-between gap-2 text-[11px] text-[var(--soft)] font-mono pt-4 border-t border-[var(--hair)]">
+        <div class="flex items-center gap-2">
+          <span>Data provided via Artificial Analysis Explorer</span>
+          <template x-if="data.datasetStale || !data.lastSyncedAt">
+            <span class="inline-flex items-center gap-1 px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20 text-[10px]">
+              Bundled dataset
+            </span>
+          </template>
+        </div>
+        <div class="flex items-center gap-2">
+          <template x-if="data.lastSyncedAt">
+            <span x-text="`Last synced: ${fmtDateTimeCompact(data.lastSyncedAt)}`"></span>
+          </template>
+          <button
+            @click="syncModels()"
+            :disabled="syncing"
+            class="text-[11px] font-semibold text-[var(--accent)] hover:underline cursor-pointer disabled:opacity-50"
+            aria-label="Sync dataset now"
+          >
+            <span x-text="syncing ? 'Syncing…' : 'Sync now'"></span>
+          </button>
+        </div>
       </div>
 
     </div>

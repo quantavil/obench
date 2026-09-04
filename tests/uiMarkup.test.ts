@@ -15,12 +15,14 @@ describe('UI Markup & Accessibility Invariants', () => {
 
   test('mobile inspector has focus sentinels and labelled controls', async () => {
     const drawer = await Bun.file('src/components/ModelDrawer.astro').text();
-    expect(drawer).toContain('x-ref="inspectorDialog"');
-    expect(drawer).toContain('aria-label="Input tokens per request"');
-    expect(drawer).toContain('aria-label="Output tokens per request"');
-    expect(drawer).toContain('aria-label="Requests per day"');
-    expect(drawer).toContain('step="100"');
-    expect(drawer).toContain('step="50"');
+    const body = await Bun.file('src/components/ModelDrawerBody.astro').text();
+    const combined = drawer + '\n' + body;
+    expect(combined).toContain('x-ref="inspectorDialog"');
+    expect(combined).toContain('aria-label="Input tokens per request"');
+    expect(combined).toContain('aria-label="Output tokens per request"');
+    expect(combined).toContain('aria-label="Requests per day"');
+    expect(combined).toContain('step="100"');
+    expect(combined).toContain('step="50"');
   });
 
   test('restrained accent tokens and reduced motion are defined', async () => {

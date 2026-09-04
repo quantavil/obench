@@ -3,6 +3,7 @@ import type { Context, Next } from 'hono';
 import { cors } from 'hono/cors';
 import { AA_MODELS_URL, SyncError, syncAaModels } from './aaService';
 import defaultModels from '../data/models.json';
+import { mergeSyncedModels } from '../utils/syncMerge';
 import type { ModelRecord } from '../types/model';
 
 type KVNamespace = {
@@ -93,16 +94,38 @@ function getExecutionContext(c: Context<{ Bindings: Bindings }>): { waitUntil?: 
   return null;
 }
 
+async function getKvModels(kv: KVNamespace): Promise<ModelRecord[]> {
+  try {
+    const models = (await kv.get(KV_MODELS_KEY, { type: 'json' })) as ModelRecord[] | null;
+    return Array.isArray(models) ? models : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * Live AA sync only returns benchmarked models, so merging against the current
+ * dataset is mandatory — otherwise OpenRouter-only models would be deleted
+ * from KV on every refresh.
+ */
+async function mergeAndPersist(kv: KVNamespace, apiKey: string) {
+  const result = await syncAaModels(apiKey);
+  const existing = await getKvModels(kv);
+  const base = existing.length > 0 ? existing : (defaultModels as ModelRecord[]);
+  const merged = mergeSyncedModels(base, result.models);
+  const meta: ModelsMeta = {
+    syncedAt: Date.now(),
+    total: merged.length,
+    pagesFetched: result.pagesFetched,
+  };
+  await persistToKv(kv, merged, meta);
+  return { merged, result, meta };
+}
+
 function scheduleDailyRefresh(c: Context<{ Bindings: Bindings }>, kv: KVNamespace, apiKey: string) {
   const task = (async () => {
     try {
-      const result = await syncAaModels(apiKey);
-      const meta: ModelsMeta = {
-        syncedAt: Date.now(),
-        total: result.totalNormalized,
-        pagesFetched: result.pagesFetched,
-      };
-      await persistToKv(kv, result.models as ModelRecord[], meta);
+      await mergeAndPersist(kv, apiKey);
     } catch (e) {
       console.warn('[kv] daily auto-refresh failed', e);
     }
@@ -162,7 +185,9 @@ app.get('/models', async (c) => {
       }
 
       if (Array.isArray(defaultModels) && defaultModels.length > 0) {
-        const meta: ModelsMeta = { syncedAt: Date.now(), total: defaultModels.length };
+        // syncedAt 0 = bundled snapshot, not a live sync — keeps the "Last
+        // synced" footer honest and marks the data stale for daily refresh.
+        const meta: ModelsMeta = { syncedAt: 0, total: defaultModels.length };
         const seedTask = persistToKv(kv, defaultModels as ModelRecord[], meta).catch(() => {});
         const ctx = getExecutionContext(c);
         if (ctx?.waitUntil) ctx.waitUntil(seedTask);
@@ -179,13 +204,11 @@ app.get('/models', async (c) => {
 
       if (apiKey) {
         try {
-          const result = await syncAaModels(apiKey);
-          const meta: ModelsMeta = { syncedAt: Date.now(), total: result.totalNormalized, pagesFetched: result.pagesFetched };
-          await persistToKv(kv, result.models as ModelRecord[], meta);
+          const { merged, meta } = await mergeAndPersist(kv, apiKey);
           return c.json({
             ok: true,
-            total: result.totalNormalized,
-            models: result.models,
+            total: merged.length,
+            models: merged,
             syncedAt: meta.syncedAt,
             source: 'live',
           });
@@ -264,12 +287,21 @@ app.post('/sync', async (c) => {
 
   try {
     const result = await syncAaModels(apiKey);
-    const syncedAt = Date.now();
-    const meta: ModelsMeta = { syncedAt, total: result.totalNormalized, pagesFetched: result.pagesFetched };
     const kv = getKv(c);
+    const syncedAt = Date.now();
+    let models: ModelRecord[] = result.models;
+    let total = result.totalNormalized;
+    let persisted = false;
+
     if (kv) {
       try {
-        await persistToKv(kv, result.models as ModelRecord[], meta);
+        const existing = await getKvModels(kv);
+        const base = existing.length > 0 ? existing : (defaultModels as ModelRecord[]);
+        models = mergeSyncedModels(base, result.models);
+        total = models.length;
+        const meta: ModelsMeta = { syncedAt, total, pagesFetched: result.pagesFetched };
+        await persistToKv(kv, models, meta);
+        persisted = true;
       } catch (e) {
         console.warn('[kv] persist failed', e);
       }
@@ -277,9 +309,15 @@ app.post('/sync', async (c) => {
 
     return c.json({
       ok: true,
-      ...result,
+      models,
+      total,
+      pagesFetched: result.pagesFetched,
+      totalRaw: result.totalRaw,
+      totalNormalized: result.totalNormalized,
+      skippedRecords: result.skippedRecords,
+      complete: result.complete,
       syncedAt,
-      persisted: !!kv,
+      persisted,
     });
   } catch (error) {
     if (error instanceof SyncError) {

@@ -3,6 +3,15 @@ import { calculateModelCost } from './pricing';
 
 export { calculateModelCost };
 
+/** Parse 'YYYY', 'YYYY-MM' or 'YYYY-MM-DD' release strings to a timestamp (0 when unparseable). */
+export function parseReleaseTs(releasedAt: string): number {
+  const direct = Date.parse(releasedAt);
+  if (!isNaN(direct) && direct > 0) return direct;
+  const parts = String(releasedAt).split('-');
+  const padded = parts.length === 1 ? `${parts[0]}-01-01` : parts.length === 2 ? `${parts[0]}-${parts[1]}-01` : null;
+  return padded ? Date.parse(padded) || 0 : 0;
+}
+
 export function computeEfficiencyFrontier(
   models: ModelRecord[],
   costBasis: CostBasis = 'blended',
@@ -42,16 +51,7 @@ export function computeEfficiencyFrontier(
 export function computeSotaProgression(models: ModelRecord[]): Array<ModelRecord & { at: number; iqGain: number }> {
   const parsed = (models || [])
     .filter((m) => m && m.intelligence != null && m.releasedAt)
-    .map((m) => {
-      const direct = Date.parse(m.releasedAt!);
-      let at = isNaN(direct) ? 0 : direct;
-      if (!at) {
-        const parts = String(m.releasedAt).split('-');
-        const padded = parts.length === 1 ? `${parts[0]}-01-01` : parts.length === 2 ? `${parts[0]}-${parts[1]}-01` : null;
-        at = padded ? Date.parse(padded) || 0 : 0;
-      }
-      return { ...m, at };
-    })
+    .map((m) => ({ ...m, at: parseReleaseTs(m.releasedAt!) }))
     .filter((m) => m.at > 0)
     .sort((a, b) => a.at - b.at || (b.intelligence ?? 0) - (a.intelligence ?? 0));
 
